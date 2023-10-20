@@ -9,9 +9,10 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 import re
+from matplotlib.font_manager import FontProperties
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
-from matplotlib.font_manager import FontProperties
+from transformers import pipeline
 
 
 # nltk.download("stopwords")
@@ -312,6 +313,30 @@ col13, col14, col15 = st.columns([45, 10, 45])
 
 st.subheader('Topic Modelling')
 
+# # Using Zero-shot classification
+# # Initialize the zero-shot classification pipeline
+# classifier = pipeline('zero-shot-classification', model='facebook/bart-large-mnli')
+# labels = ['retail', 'food', 'facilities']
+
+# # Function to predict categories and add them to the DataFrame
+# def predict_categories(text):
+#     result = classifier(text, labels)
+#     predicted_category = result['labels'][0]
+#     return predicted_category
+
+# with st.spinner('Building topic modelling'):
+#     # Apply the predict_categories function to all rows in the dataset
+#     # filtered_data['Predicted Category'] = filtered_data['text'].apply(predict_categories)
+
+#     filtered_data['Predicted Category'] = filtered_data['text_short'].apply(lambda x: classifier(x, labels)['labels'][0])
+                                                  
+#     # Display the dataset with the predicted categories
+#     st.write("Predicted Categories for Each Text:")
+#     st.write(filtered_data[['text_short', 'Predicted Category']])
+
+#########################################################
+
+#Using LDA
 # Preprocess the text data for topic modeling
 filtered_tokens = filtered_data['text'].apply(preprocess_text)
 
