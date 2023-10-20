@@ -73,8 +73,9 @@ language = st.sidebar.selectbox("Select the language type:", languages)
 year = st.sidebar.slider('year', 2016, 2023, 2022)
 
 # Load and filter data
-filtered_data = load_and_filter_data(DATA_URL, language, year)
-
+with st.spinner('Loading data'):
+    filtered_data = load_and_filter_data(DATA_URL, language, year)
+st.write("Done reading data")
 if st.checkbox('Show filtered data'):
     st.subheader('Raw data')
     st.write(filtered_data)
@@ -173,9 +174,10 @@ negative_reviews = filtered_data[filtered_data['sent_res'] == 'negative']
 positive_text = " ".join(positive_reviews['text'])
 negative_text = " ".join(negative_reviews['text'])
 
-# Preprocess the text
-preprocessed_positive_text = preprocess_text(positive_text)
-preprocessed_negative_text = preprocess_text(negative_text)
+with st.spinner('Preprocessing data for wordcloud'):
+    # Preprocess the text
+    preprocessed_positive_text = preprocess_text(positive_text)
+    preprocessed_negative_text = preprocess_text(negative_text)
 
 with col7:
     # Check if the selected language is Chinese
@@ -185,18 +187,19 @@ with col7:
     else:
         font_path = None  # Use the default font for other languages
 
-    # Postive Word Cloud
-    st.subheader(f'Word Cloud for Positive Reviews in {language}')
-    positive_wordcloud = WordCloud(
-        background_color='white',
-        font_path=font_path,  # Set font path based on language
-    ).generate(preprocessed_positive_text)
+    with st.spinner('Plotting Wordcloud'):
+        # Postive Word Cloud
+        st.subheader(f'Word Cloud for Positive Reviews in {language}')
+        positive_wordcloud = WordCloud(
+            background_color='white',
+            font_path=font_path,  # Set font path based on language
+        ).generate(preprocessed_positive_text)
 
-    # Set the Word Cloud for positive reviews as plot3
-    positive_wc = plt.figure(figsize=(10, 5))
-    plt.imshow(positive_wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    st.pyplot(positive_wc)
+        # Set the Word Cloud for positive reviews as plot3
+        positive_wc = plt.figure(figsize=(10, 5))
+        plt.imshow(positive_wordcloud, interpolation='bilinear')
+        plt.axis('off')
+        st.pyplot(positive_wc)
 
 with col9:
     # Check if the selected language is Chinese
