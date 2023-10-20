@@ -34,12 +34,12 @@ st.title('Sentiment Analaysis Dashboard')
 
 #########################################################
 
-DATA_URL = (r"ikea_reviews_sentiment2.csv")
+DATA_URL = (r"ikea_reviews_sentiment2.parquet")
 
 # Function to load data and filter it based on language and date range
 @st.cache_data
-def load_and_filter_data(DATA_URL, language, year):
-    data = pd.read_csv(DATA_URL)
+def load_and_filter_data(DATA_URL, language, store, year):
+    data = pd.read_parquet(DATA_URL)
     lowercase = lambda x: str(x).lower()
     data.rename(lowercase, axis='columns', inplace=True)
     
@@ -52,6 +52,9 @@ def load_and_filter_data(DATA_URL, language, year):
 
     # Filter data based on language
     filtered_data = data[data['language'].str.lower().isin([language.lower()])]
+
+    # Filter data by store name
+    filtered_data = filtered_data[filtered_data['title'].isin([store])]
     
     # Convert "publishedAtDate" to datetime
     filtered_data['publishedatdate'] = pd.to_datetime(filtered_data['publishedatdate'])
@@ -65,15 +68,19 @@ def load_and_filter_data(DATA_URL, language, year):
 st.sidebar.header("Choose your filter")
 
 languages = ["English", "Indonesian", "Chinese"]
+stores = ["IKEA Batu Kawan", "IKEA Cheras", "IKEA Damansara", "IKEA Tebrau"]
 
-# Filter 1 (select language type)
+# Filter 1 (select language)
 language = st.sidebar.selectbox("Select the language type:", languages)
 
-# Filter 2 (year)
+# Filter 2 (select stores)
+store = st.sidebar.selectbox("Select the store:", stores)
+
+# Filter 3 (year)
 year = st.sidebar.slider('year', 2016, 2023, 2022)
 
 # Load and filter data
-filtered_data = load_and_filter_data(DATA_URL, language, year)
+filtered_data = load_and_filter_data(DATA_URL, language, store, year)
 
 if st.checkbox('Show filtered data'):
     st.subheader('Raw data')
