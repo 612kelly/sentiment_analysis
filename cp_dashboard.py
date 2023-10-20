@@ -35,11 +35,14 @@ st.title('Sentiment Analaysis Dashboard')
 #########################################################
 
 DATA_URL = (r"ikea_reviews_sentiment2.parquet")
+data = pd.read_parquet(DATA_URL)
+data['publishedAtDate'] = pd.to_datetime(data['publishedAtDate'])
+data['date'] = data['publishedAtDate'].dt.date
 
 # Function to load data and filter it based on language and date range
 @st.cache_data
-def load_and_filter_data(DATA_URL, language, store, year):
-    data = pd.read_parquet(DATA_URL)
+def load_and_filter_data(DATA_URL, language, store, start_date, end_date):
+    data['date'] = data['publishedAtDate'].dt.date
     lowercase = lambda x: str(x).lower()
     data.rename(lowercase, axis='columns', inplace=True)
     
@@ -56,11 +59,14 @@ def load_and_filter_data(DATA_URL, language, store, year):
     # Filter data by store name
     filtered_data = filtered_data[filtered_data['title'].isin([store])]
     
-    # Convert "publishedAtDate" to datetime
-    filtered_data['publishedatdate'] = pd.to_datetime(filtered_data['publishedatdate'])
-    
+    # Filter data by date range
+    filtered_data = filtered_data[
+        (filtered_data['date'] >= start_date) &
+        (filtered_data['date'] <= end_date)
+    ]
+
     # Filter data by year
-    filtered_data = filtered_data[filtered_data['publishedatdate'].dt.year == year]
+    # filtered_data = filtered_data[filtered_data['publishedatdate'].dt.year == year]
     
     return filtered_data
 
@@ -68,21 +74,34 @@ def load_and_filter_data(DATA_URL, language, store, year):
 st.sidebar.header("Choose your filter")
 
 languages = ["English", "Indonesian", "Chinese"]
-stores = ["IKEA Batu Kawan", "IKEA Cheras", "IKEA Damansara", "IKEA Tebrau"]
 
 # Filter 1 (select language)
 language = st.sidebar.selectbox("Select the language type:", languages)
 
 # Filter 2 (select stores)
-store = st.sidebar.selectbox("Select the store:", stores)
+store = st.sidebar.selectbox("Select the store:", options=data["title"].unique())
 
 # Filter 3 (year)
-year = st.sidebar.slider('year', 2016, 2023, 2022)
+# year = st.sidebar.slider('year', 2016, 2023, 2022)
+
+# Filter 4 (date range)
+min_date = min(data['date'])
+max_date = max(data['date'])
+
+# # # Calculate default values within the range
+default_start_date = min_date  # Set the default to the minimum date
+default_end_date = max_date  # Set the default to the maximum date
+
+# start_date = st.sidebar.date_input("Start Date", min_value=min_date, max_value=max_date)
+# end_date = st.sidebar.date_input("End Date", min_value=min_date, max_value=max_date)
+
+start_date = st.sidebar.date_input("Start Date", min_value = min_date, max_value = max_date, value=default_start_date)
+end_date = st.sidebar.date_input("End Date", min_value = min_date, max_value = max_date, value=default_end_date)
 
 # Load and filter data
-
 with st.spinner('Loading data'):
-    filtered_data = load_and_filter_data(DATA_URL, language, store, year)
+    filtered_data = load_and_filter_data(DATA_URL, language, store, start_date, end_date)
+
 st.write("Done reading data")
 if st.checkbox('Show filtered data'):
     st.subheader('Raw data')
@@ -217,18 +236,19 @@ with col9:
     else:
         font_path = None  # Use the default font for other languages
 
-    # Negative Word Cloud
-    st.subheader(f'Word Cloud for Negative Reviews in {language}')
-    negative_wordcloud = WordCloud(
-        background_color='white',
-        font_path=font_path,  # Set font path based on language
-    ).generate(preprocessed_negative_text)
+    with st.spinner('Plotting Wordcloud'):
+        # Negative Word Cloud
+        st.subheader(f'Word Cloud for Negative Reviews in {language}')
+        negative_wordcloud = WordCloud(
+            background_color='white',
+            font_path=font_path,  # Set font path based on language
+        ).generate(preprocessed_negative_text)
 
-    # Set the Word Cloud for negative reviews as plot3
-    negative_wc = plt.figure(figsize=(10, 5))
-    plt.imshow(negative_wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    st.pyplot(negative_wc)
+        # Set the Word Cloud for negative reviews as plot3
+        negative_wc = plt.figure(figsize=(10, 5))
+        plt.imshow(negative_wordcloud, interpolation='bilinear')
+        plt.axis('off')
+        st.pyplot(negative_wc)
 
 #########################################################
 
