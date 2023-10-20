@@ -116,39 +116,51 @@ col1, col2, col3 = st.columns([35, 30, 30])
 #########################################################
 
 with col1:
+    total_reviews = int(filtered_data["text"].count())
+    st.subheader('Number of Reviews')
+    st.subheader(f"{total_reviews}")
+
+with col2:
+    average_rating = round(filtered_data["stars"].mean(),1)
+    star_rating = ":star:" * int(round(average_rating,0))
+    st.subheader('Average Star Reviews')
+    st.subheader(f"{average_rating} {star_rating}")
+
+with col3:
     # Star Analysis Chart
     # pie chart + add star filter
-    st.subheader('Star Reviews Analysis')
+    st.subheader('Star Count')
 
     # Group data by star review and count occurrences
     stars_counts = filtered_data['stars'].value_counts()
 
     plot5 = px.bar(filtered_data, x=stars_counts.values, y=stars_counts.index, orientation='h')
     st.plotly_chart(plot5, use_container_width=True)
-
 #########################################################
 
 st.subheader('Sentiment Analysis')
 # make 2 columns for second row of dashboard
 col4, col5, col6 = st.columns([45, 10, 45])
 
-with col4:
-    # Sentiment Analysis Chart
-    # Group data by sentiment and count occurrences
-    sentiment_counts = filtered_data['sent_res'].value_counts()
+# with col4:
+#     # Sentiment Analysis Chart
+#     # Group data by sentiment and count occurrences
+#     sentiment_counts = filtered_data['sent_res'].value_counts()
 
-    # Bar chart for sentiment
-    bar_chart = px.bar(
-        sentiment_counts, 
-        x=sentiment_counts.index, 
-        y=sentiment_counts.values,
-        labels={'x': 'sent_res', 'y': 'Count'},
-        title=f'Sentiment Distribution for {language} Reviews')
-    st.plotly_chart(bar_chart, use_container_width=True)
+#     # Bar chart for sentiment
+#     bar_chart = px.bar(
+#         sentiment_counts, 
+#         x=sentiment_counts.index, 
+#         y=sentiment_counts.values,
+#         labels={'x': 'sent_res', 'y': 'Count'},
+#         title=f'Sentiment Distribution for {language} Reviews')
+#     st.plotly_chart(bar_chart, use_container_width=True)
 
 #########################################################
 
-with col6:
+with col4:
+    # Group data by sentiment and count occurrences
+    sentiment_counts = filtered_data['sent_res'].value_counts()
     # Pie chart for sentiment
     pie_chart = px.pie(
         values=sentiment_counts.values,
@@ -320,7 +332,7 @@ st.subheader('Topic Modelling')
 
 # # Function to predict categories and add them to the DataFrame
 # def predict_categories(text):
-#     result = classifier(text, labels)
+#     result = classifier(text, labels, multi_class_True)
 #     predicted_category = result['labels'][0]
 #     return predicted_category
 
