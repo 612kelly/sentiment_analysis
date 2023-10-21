@@ -73,31 +73,41 @@ def load_and_filter_data(DATA_URL, language, store, start_date, end_date):
 
 # Slidebar filter
 st.sidebar.header("Choose your filter")
+with st.sidebar.form(key ='Form Filter'):
+    # user_word = st.text_input("Enter a keyword", "habs")    
+    # select_language = st.radio('Tweet language', ('All', 'English', 'French'))
+    # include_retweets = st.checkbox('Include retweets in data')
+    # num_of_tweets = st.number_input('Maximum number of tweets', 100)
 
-languages = ["English", "Indonesian", "Chinese"]
+    languages = ["English", "Indonesian", "Chinese"]
 
-# Filter 1 (select language)
-language = st.sidebar.selectbox("Select the language type:", languages)
+    # Filter 1 (select language)
+    language = st.selectbox("Select the language type:", languages)
 
-# Filter 2 (select stores)
-store = st.sidebar.selectbox("Select the store:", options=data["title"].unique())
+    # Filter 2 (select stores)
+    store = st.selectbox("Select the store:", options=data["title"].unique())
 
-# Filter 3 (year)
-# year = st.sidebar.slider('year', 2016, 2023, 2022)
+    # Filter 3 (year)
+    # year = st.sidebar.slider('year', 2016, 2023, 2022)
 
-# Filter 4 (date range)
-min_date = min(data['date'])
-max_date = max(data['date'])
+    # Filter 4 (date range)
+    min_date = min(data['date'])
+    max_date = max(data['date'])
 
-# # # Calculate default values within the range
-default_start_date = min_date  # Set the default to the minimum date
-default_end_date = max_date  # Set the default to the maximum date
+    # # # Calculate default values within the range
+    default_start_date = min_date  # Set the default to the minimum date
+    default_end_date = max_date  # Set the default to the maximum date
+    
+    # start_date = st.sidebar.date_input("Start Date", min_value=min_date, max_value=max_date)
+    # end_date = st.sidebar.date_input("End Date", min_value=min_date, max_value=max_date)
 
-# start_date = st.sidebar.date_input("Start Date", min_value=min_date, max_value=max_date)
-# end_date = st.sidebar.date_input("End Date", min_value=min_date, max_value=max_date)
+    start_date = st.date_input("Start Date", min_value = min_date, max_value = max_date, value=default_start_date)
+    end_date = st.date_input("End Date", min_value = min_date, max_value = max_date, value=default_end_date)
 
-start_date = st.sidebar.date_input("Start Date", min_value = min_date, max_value = max_date, value=default_start_date)
-end_date = st.sidebar.date_input("End Date", min_value = min_date, max_value = max_date, value=default_end_date)
+    submitted1 = st.form_submit_button(label = 'Submit')
+
+
+
 
 # Load and filter data
 with st.spinner('Loading data'):
@@ -194,10 +204,15 @@ def preprocess_text(text):
     words = nltk.word_tokenize(text)
     
     # Remove stopwords
-    words = [word for word in words if word.lower() not in stopwords.words("english")]
+    try:
+        words = [word for word in words if word.lower() not in stopwords.words("english")]
+    except:
+        nltk.download('stopwords')
+        words = [word for word in words if word.lower() not in stopwords.words("english")]
     
     # Remove the word "ikea"
     words = [word for word in words if word.lower() != "ikea"]
+    
     
     # Lemmatize words
     lemmatizer = WordNetLemmatizer()
@@ -216,7 +231,12 @@ negative_text = " ".join(negative_reviews['text'])
 
 with st.spinner('Preprocessing data for wordcloud'):
     # Preprocess the text
-    preprocessed_positive_text = preprocess_text(positive_text)
+    try:
+        preprocessed_positive_text = preprocess_text(positive_text)
+    except:
+        nltk.download('omw-1.4') 
+        nltk.download('wordnet') 
+        preprocessed_positive_text = preprocess_text(positive_text)
     preprocessed_negative_text = preprocess_text(negative_text)
 
 with col7:
@@ -327,7 +347,8 @@ st.subheader('Topic Modelling')
 
 # # Using Zero-shot classification
 # # Initialize the zero-shot classification pipeline
-# classifier = pipeline('zero-shot-classification', model='facebook/bart-large-mnli')
+# with st.spinner("Downloading zero shot classifier"):
+#   classifier = pipeline('zero-shot-classification', model='facebook/bart-large-mnli')
 # labels = ['retail', 'food', 'facilities']
 
 # # Function to predict categories and add them to the DataFrame
