@@ -355,8 +355,13 @@ with tab2:
 
     # Using Zero-shot classification
     # Initialize the zero-shot classification pipeline
+
+    @st.cache_data
+    def get_zero_shot_model():
+        return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
+
     with st.spinner("Downloading zero shot classifier"):
-      classifier = pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
+      classifier = get_zero_shot_model()
     labels = ['retail', 'food', 'facilities']
 
     # # Function to predict categories and add them to the DataFrame
