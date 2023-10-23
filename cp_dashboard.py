@@ -14,6 +14,9 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.decomposition import LatentDirichletAllocation
 from transformers import pipeline
 
+from datetime import datetime
+
+
 
 # nltk.download("stopwords")
 # nltk.download("wordnet")
@@ -82,10 +85,10 @@ with st.sidebar.form(key ='Form Filter'):
     languages = ["English", "Indonesian", "Chinese"]
 
     # Filter 1 (select language)
-    language = st.selectbox("Select the language type:", languages)
+    language = st.selectbox("Select language:", languages)
 
     # Filter 2 (select stores)
-    store = st.selectbox("Select the store:", options=data["title"].unique())
+    store = st.selectbox("Select store:", options=data["title"].unique())
 
     # Filter 3 (year)
     # year = st.sidebar.slider('year', 2016, 2023, 2022)
@@ -113,281 +116,293 @@ with st.sidebar.form(key ='Form Filter'):
 with st.spinner('Loading data'):
     filtered_data = load_and_filter_data(DATA_URL, language, store, start_date, end_date)
 
-st.write("Done reading data")
-if st.checkbox('Show filtered data'):
-    st.subheader('Raw data')
-    st.write(filtered_data)
 
-#########################################################
+tab1, tab2, tab3 = st.tabs(["Overview", "Topic Modelling", "About"])
 
-# make 3 columns for first row of dashboard
-col1, col2, col3 = st.columns([35, 30, 30])
+with tab1:
+    if st.checkbox('Show filtered data'):
+        st.subheader('Raw data')
+        st.write(filtered_data)
 
-#########################################################
+    #########################################################
 
-with col1:
-    total_reviews = int(filtered_data["text"].count())
-    st.subheader('Number of Reviews')
-    st.subheader(f"{total_reviews}")
+    # make 3 columns for first row of dashboard
+    col1, col2, col3 = st.columns([35, 30, 30])
 
-with col2:
-    average_rating = round(filtered_data["stars"].mean(),1)
-    star_rating = ":star:" * int(round(average_rating,0))
-    st.subheader('Average Star Reviews')
-    st.subheader(f"{average_rating} {star_rating}")
+    #########################################################
 
-with col3:
-    # Star Analysis Chart
-    # pie chart + add star filter
-    st.subheader('Star Count')
+    with col1:
+        total_reviews = int(filtered_data["text"].count())
+        st.subheader('Number of Reviews')
+        st.subheader(f"{total_reviews}")
 
-    # Group data by star review and count occurrences
-    stars_counts = filtered_data['stars'].value_counts()
+    with col2:
+        average_rating = round(filtered_data["stars"].mean(),1)
+        star_rating = ":star:" * int(round(average_rating,0))
+        st.subheader('Average Star Reviews')
+        st.subheader(f"{average_rating} {star_rating}")
 
-    plot5 = px.bar(filtered_data, x=stars_counts.values, y=stars_counts.index, orientation='h')
-    st.plotly_chart(plot5, use_container_width=True)
-#########################################################
+    with col3:
+        # Star Analysis Chart
+        # pie chart + add star filter
+        st.subheader('Star Count')
 
-st.subheader('Sentiment Analysis')
-# make 2 columns for second row of dashboard
-col4, col5, col6 = st.columns([45, 10, 45])
+        # Group data by star review and count occurrences
+        stars_counts = filtered_data['stars'].value_counts()
 
-# with col4:
-#     # Sentiment Analysis Chart
-#     # Group data by sentiment and count occurrences
-#     sentiment_counts = filtered_data['sent_res'].value_counts()
+        plot5 = px.bar(filtered_data, x=stars_counts.values, y=stars_counts.index, orientation='h')
+        st.plotly_chart(plot5, use_container_width=True)
+    #########################################################
 
-#     # Bar chart for sentiment
-#     bar_chart = px.bar(
-#         sentiment_counts, 
-#         x=sentiment_counts.index, 
-#         y=sentiment_counts.values,
-#         labels={'x': 'sent_res', 'y': 'Count'},
-#         title=f'Sentiment Distribution for {language} Reviews')
-#     st.plotly_chart(bar_chart, use_container_width=True)
+    st.subheader('Sentiment Analysis')
+    # make 2 columns for second row of dashboard
+    col4, col5, col6 = st.columns([45, 10, 45])
 
-#########################################################
+    # with col4:
+    #     # Sentiment Analysis Chart
+    #     # Group data by sentiment and count occurrences
+    #     sentiment_counts = filtered_data['sent_res'].value_counts()
 
-with col4:
-    # Group data by sentiment and count occurrences
-    sentiment_counts = filtered_data['sent_res'].value_counts()
-    # Pie chart for sentiment
-    pie_chart = px.pie(
-        values=sentiment_counts.values,
-        names=sentiment_counts.index,
-        hole=0.3,
-        title=f'Sentiment Distribution for {language} Reviews',
-        color=sentiment_counts.index,
-        # set the color of positive to blue and negative to orange
-        color_discrete_map={"Positive": "#1F77B4", "Negative": "#FF7F0E"},
-    )
-    pie_chart.update_traces(
-        textposition="inside",
-        texttemplate="%{label}<br>%{value} (%{percent})",
-        hovertemplate="<b>%{label}</b><br>Percentage=%{percent}<br>Count=%{value}",
-    )
-    pie_chart.update_layout(showlegend=False)
-    st.plotly_chart(pie_chart, use_container_width=True)
+    #     # Bar chart for sentiment
+    #     bar_chart = px.bar(
+    #         sentiment_counts, 
+    #         x=sentiment_counts.index, 
+    #         y=sentiment_counts.values,
+    #         labels={'x': 'sent_res', 'y': 'Count'},
+    #         title=f'Sentiment Distribution for {language} Reviews')
+    #     st.plotly_chart(bar_chart, use_container_width=True)
 
-#########################################################
+    #########################################################
 
-# make 2 columns for second row of dashboard
-col7, col8, col9 = st.columns([45, 10, 45])
+    with col4:
+        # Group data by sentiment and count occurrences
+        sentiment_counts = filtered_data['sent_res'].value_counts()
+        # Pie chart for sentiment
+        pie_chart = px.pie(
+            values=sentiment_counts.values,
+            names=sentiment_counts.index,
+            hole=0.3,
+            title=f'Sentiment Distribution for {language} Reviews',
+            color=sentiment_counts.index,
+            # set the color of positive to blue and negative to orange
+            color_discrete_map={"Positive": "#1F77B4", "Negative": "#FF7F0E"},
+        )
+        pie_chart.update_traces(
+            textposition="inside",
+            texttemplate="%{label}<br>%{value} (%{percent})",
+            hovertemplate="<b>%{label}</b><br>Percentage=%{percent}<br>Count=%{value}",
+        )
+        pie_chart.update_layout(showlegend=False)
+        st.plotly_chart(pie_chart, use_container_width=True)
 
-#########################################################
+    #########################################################
 
-# Word Cloud
-# Function to preprocess text
-# remove ' and single letter
-def preprocess_text(text):
-    # Tokenize the text
-    words = nltk.word_tokenize(text)
-    
-    # Remove stopwords
-    try:
-        words = [word for word in words if word.lower() not in stopwords.words("english")]
-    except:
-        nltk.download('stopwords')
-        words = [word for word in words if word.lower() not in stopwords.words("english")]
-    
-    # Remove the word "ikea"
-    words = [word for word in words if word.lower() != "ikea"]
-    
-    
-    # Lemmatize words
-    lemmatizer = WordNetLemmatizer()
-    words = [lemmatizer.lemmatize(word) for word in words]
-    
-    # Join the words back into a single string
-    return " ".join(words)
-    #return words
+    # make 2 columns for second row of dashboard
+    col7, col8, col9 = st.columns([45, 10, 45])
 
-positive_reviews = filtered_data[filtered_data['sent_res'] == 'positive']
-negative_reviews = filtered_data[filtered_data['sent_res'] == 'negative']
+    #########################################################
 
-# Combine positive and negative reviews text for this language
-positive_text = " ".join(positive_reviews['text'])
-negative_text = " ".join(negative_reviews['text'])
+    # Word Cloud
+    # Function to preprocess text
+    # remove ' and single letter
+    def preprocess_text(text):
+        # Tokenize the text
+        words = nltk.word_tokenize(text)
+        
+        # Remove stopwords
+        try:
+            words = [word for word in words if word.lower() not in stopwords.words("english")]
+        except:
+            nltk.download('stopwords')
+            words = [word for word in words if word.lower() not in stopwords.words("english")]
+        
+        # Remove the word "ikea"
+        words = [word for word in words if word.lower() != "ikea"]
+        
+        
+        # Lemmatize words
+        lemmatizer = WordNetLemmatizer()
+        words = [lemmatizer.lemmatize(word) for word in words]
+        
+        # Join the words back into a single string
+        return " ".join(words)
+        #return words
 
-with st.spinner('Preprocessing data for wordcloud'):
-    # Preprocess the text
-    try:
-        preprocessed_positive_text = preprocess_text(positive_text)
-    except:
-        nltk.download('omw-1.4') 
-        nltk.download('wordnet') 
-        preprocessed_positive_text = preprocess_text(positive_text)
-    preprocessed_negative_text = preprocess_text(negative_text)
+    positive_reviews = filtered_data[filtered_data['sent_res'] == 'positive']
+    negative_reviews = filtered_data[filtered_data['sent_res'] == 'negative']
 
-with col7:
-    # Check if the selected language is Chinese
-    if language.lower() == "chinese":
-        font_path = (r"simhei\chinese.simhei.ttf")
-        # the path to the Chinese font file
-    else:
-        font_path = None  # Use the default font for other languages
+    # Combine positive and negative reviews text for this language
+    positive_text = " ".join(positive_reviews['text'])
+    negative_text = " ".join(negative_reviews['text'])
 
-    with st.spinner('Plotting Wordcloud'):
-        # Postive Word Cloud
-        st.subheader(f'Word Cloud for Positive Reviews in {language}')
-        positive_wordcloud = WordCloud(
-            background_color='white',
-            font_path=font_path,  # Set font path based on language
-        ).generate(preprocessed_positive_text)
+    with st.spinner('Preprocessing data for wordcloud'):
+        # Preprocess the text
+        try:
+            preprocessed_positive_text = preprocess_text(positive_text)
+        except:
+            nltk.download('omw-1.4') 
+            nltk.download('wordnet') 
+            preprocessed_positive_text = preprocess_text(positive_text)
+        preprocessed_negative_text = preprocess_text(negative_text)
 
-        # Set the Word Cloud for positive reviews as plot3
-        positive_wc = plt.figure(figsize=(10, 5))
-        plt.imshow(positive_wordcloud, interpolation='bilinear')
-        plt.axis('off')
-        st.pyplot(positive_wc)
+    with col7:
+        # Check if the selected language is Chinese
+        if language.lower() == "chinese":
+            font_path = (r"simhei\chinese.simhei.ttf")
+            # the path to the Chinese font file
+        else:
+            font_path = None  # Use the default font for other languages
 
-with col9:
-    # Check if the selected language is Chinese
-    if language.lower() == "chinese":
-        font_path = (r"simhei\chinese.simhei.ttf")
-        # the path to the Chinese font file
-    else:
-        font_path = None  # Use the default font for other languages
+        with st.spinner('Plotting Wordcloud'):
+            # Postive Word Cloud
+            st.subheader(f'Word Cloud for Positive Reviews in {language}')
+            positive_wordcloud = WordCloud(
+                background_color='white',
+                font_path=font_path,  # Set font path based on language
+            ).generate(preprocessed_positive_text)
 
-    with st.spinner('Plotting Wordcloud'):
-        # Negative Word Cloud
-        st.subheader(f'Word Cloud for Negative Reviews in {language}')
-        negative_wordcloud = WordCloud(
-            background_color='white',
-            font_path=font_path,  # Set font path based on language
-        ).generate(preprocessed_negative_text)
+            # Set the Word Cloud for positive reviews as plot3
+            positive_wc = plt.figure(figsize=(10, 5))
+            plt.imshow(positive_wordcloud, interpolation='bilinear')
+            plt.axis('off')
+            st.pyplot(positive_wc)
 
-        # Set the Word Cloud for negative reviews as plot3
-        negative_wc = plt.figure(figsize=(10, 5))
-        plt.imshow(negative_wordcloud, interpolation='bilinear')
-        plt.axis('off')
-        st.pyplot(negative_wc)
+    with col9:
+        # Check if the selected language is Chinese
+        if language.lower() == "chinese":
+            font_path = (r"simhei\chinese.simhei.ttf")
+            # the path to the Chinese font file
+        else:
+            font_path = None  # Use the default font for other languages
 
-#########################################################
+        with st.spinner('Plotting Wordcloud'):
+            # Negative Word Cloud
+            st.subheader(f'Word Cloud for Negative Reviews in {language}')
+            negative_wordcloud = WordCloud(
+                background_color='white',
+                font_path=font_path,  # Set font path based on language
+            ).generate(preprocessed_negative_text)
 
-# make 2 columns for second row of dashboard
-col10, col11, col12 = st.columns([45, 10, 45])
+            # Set the Word Cloud for negative reviews as plot3
+            negative_wc = plt.figure(figsize=(10, 5))
+            plt.imshow(negative_wordcloud, interpolation='bilinear')
+            plt.axis('off')
+            st.pyplot(negative_wc)
 
-def get_top_n_gram(filtered_data, ngram_range, n=10):
-    # load the corpus and vectorizer
-    corpus = filtered_data['text']
-    vectorizer = CountVectorizer(
-        analyzer="word", ngram_range=ngram_range
-    )
+    #########################################################
 
-    # use the vectorizer to count the n-grams frequencies
-    X = vectorizer.fit_transform(corpus.astype(str).values)
-    words = vectorizer.get_feature_names_out()
-    words_count = np.ravel(X.sum(axis=0))
+    # make 2 columns for second row of dashboard
+    col10, col11, col12 = st.columns([45, 10, 45])
 
-    # store the results in a dataframe
-    df = pd.DataFrame(zip(words, words_count))
-    df.columns = ["words", "counts"]
-    df = df.sort_values(by="counts", ascending=False).head(n)
-    df["words"] = df["words"].str.title()
-    return df
+    def get_top_n_gram(filtered_data, ngram_range, n=10):
+        # load the corpus and vectorizer
+        corpus = filtered_data['text']
+        vectorizer = CountVectorizer(
+            analyzer="word", ngram_range=ngram_range
+        )
 
-def plot_n_gram(n_gram_df, title, color="#54A24B"):
-    # plot the top n-grams frequencies in a bar chart
-    fig = px.bar(
-        x=n_gram_df.counts,
-        y=n_gram_df.words,
-        title="<b>{}</b>".format(title),
-        text_auto=True,
-    )
-    fig.update_layout(plot_bgcolor="white")
-    fig.update_xaxes(title=None)
-    fig.update_yaxes(autorange="reversed", title=None)
-    fig.update_traces(hovertemplate="<b>%{y}</b><br>Count=%{x}", marker_color=color)
-    return fig
+        # use the vectorizer to count the n-grams frequencies
+        X = vectorizer.fit_transform(corpus.astype(str).values)
+        words = vectorizer.get_feature_names_out()
+        words_count = np.ravel(X.sum(axis=0))
 
-with col10:
-    # plot the top 10 occuring words 
-    top_unigram = get_top_n_gram(filtered_data, ngram_range=(1, 1), n=10)
-    unigram_plot = plot_n_gram(
-        top_unigram, title="Top 10 Occuring Words"
-    )
-    unigram_plot.update_layout(height=350)
-    st.plotly_chart(unigram_plot, use_container_width=True)
+        # store the results in a dataframe
+        df = pd.DataFrame(zip(words, words_count))
+        df.columns = ["words", "counts"]
+        df = df.sort_values(by="counts", ascending=False).head(n)
+        df["words"] = df["words"].str.title()
+        return df
 
-with col12:
-    top_bigram = get_top_n_gram(filtered_data, ngram_range=(2, 2), n=10)
-    bigram_plot = plot_n_gram(
-        top_bigram, title="Top 10 Occuring Bigrams"
-    )
-    bigram_plot.update_layout(height=350)
-    st.plotly_chart(bigram_plot, use_container_width=True)
+    def plot_n_gram(n_gram_df, title, color="#54A24B"):
+        # plot the top n-grams frequencies in a bar chart
+        fig = px.bar(
+            x=n_gram_df.counts,
+            y=n_gram_df.words,
+            title="<b>{}</b>".format(title),
+            text_auto=True,
+        )
+        fig.update_layout(plot_bgcolor="white")
+        fig.update_xaxes(title=None)
+        fig.update_yaxes(autorange="reversed", title=None)
+        fig.update_traces(hovertemplate="<b>%{y}</b><br>Count=%{x}", marker_color=color)
+        return fig
 
-#########################################################
+    with col10:
+        # plot the top 10 occuring words 
+        top_unigram = get_top_n_gram(filtered_data, ngram_range=(1, 1), n=10)
+        unigram_plot = plot_n_gram(
+            top_unigram, title="Top 10 Occuring Words"
+        )
+        unigram_plot.update_layout(height=350)
+        st.plotly_chart(unigram_plot, use_container_width=True)
 
-# make 2 columns for second row of dashboard
-col13, col14, col15 = st.columns([45, 10, 45])
+    with col12:
+        top_bigram = get_top_n_gram(filtered_data, ngram_range=(2, 2), n=10)
+        bigram_plot = plot_n_gram(
+            top_bigram, title="Top 10 Occuring Bigrams"
+        )
+        bigram_plot.update_layout(height=350)
+        st.plotly_chart(bigram_plot, use_container_width=True)
 
-st.subheader('Topic Modelling')
+    #########################################################
 
-# # Using Zero-shot classification
-# # Initialize the zero-shot classification pipeline
-# with st.spinner("Downloading zero shot classifier"):
-#   classifier = pipeline('zero-shot-classification', model='facebook/bart-large-mnli')
-# labels = ['retail', 'food', 'facilities']
 
-# # Function to predict categories and add them to the DataFrame
-# def predict_categories(text):
-#     result = classifier(text, labels, multi_class_True)
-#     predicted_category = result['labels'][0]
-#     return predicted_category
+with tab2:
+    # make 2 columns for second row of dashboard
+    col13, col14, col15 = st.columns([45, 10, 45])
 
-# with st.spinner('Building topic modelling'):
-#     # Apply the predict_categories function to all rows in the dataset
-#     # filtered_data['Predicted Category'] = filtered_data['text'].apply(predict_categories)
+    st.subheader('Topic Modelling')
 
-#     filtered_data['Predicted Category'] = filtered_data['text_short'].apply(lambda x: classifier(x, labels)['labels'][0])
-                                                  
-#     # Display the dataset with the predicted categories
-#     st.write("Predicted Categories for Each Text:")
-#     st.write(filtered_data[['text_short', 'Predicted Category']])
+    # Using Zero-shot classification
+    # Initialize the zero-shot classification pipeline
+    with st.spinner("Downloading zero shot classifier"):
+      classifier = pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
+    labels = ['retail', 'food', 'facilities']
 
-#########################################################
+    # # Function to predict categories and add them to the DataFrame
+    # def predict_categories(text):
+    #     result = classifier(text, labels, multi_class_True)
+    #     predicted_category = result['labels'][0]
+    #     return predicted_category
 
-#Using LDA
-# Preprocess the text data for topic modeling
-filtered_tokens = filtered_data['text'].apply(preprocess_text)
+    start_modelling_time = datetime.now()
+    st.write(start_modelling_time)
+    with st.spinner('Building topic modelling'):
+        # Apply the predict_categories function to all rows in the dataset
+        # filtered_data['Predicted Category'] = filtered_data['text'].apply(predict_categories)
 
-# Initialize the CountVectorizer
-vectorizer = CountVectorizer()
+        filtered_data['Predicted Category'] = filtered_data['text_short'].apply(lambda x: classifier(x, labels)['labels'][0])
+                                                    
+        # Display the dataset with the predicted categories
+        st.write("Predicted Categories for Each Text:")
+        st.write(filtered_data[['text_short', 'Predicted Category']])
+    end_modelling_time = datetime.now()
 
-# Fit the vectorizer with preprocessed comments
-token_matrix = vectorizer.fit_transform(filtered_tokens)
+    st.write(end_modelling_time - start_modelling_time)
 
-# Initialize LatentDirichletAllocation model
-num_topics = 10  # specify the number of topics
-lda_model = LatentDirichletAllocation(n_components=num_topics, random_state=42)
 
-# Fit the model with the token matrix
-lda_model.fit(token_matrix)
+    #########################################################
 
-# Print the top words for each topic
-feature_names = vectorizer.get_feature_names_out()
-for topic_idx, topic in enumerate(lda_model.components_):
-    top_words = [feature_names[i] for i in topic.argsort()[:-10 - 1:-1]]  # only select 10 top words of the topic
-    st.write(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
+    #Using LDA
+    st.subheader("LDA")
+    # Preprocess the text data for topic modeling
+    filtered_tokens = filtered_data['text'].apply(preprocess_text)
+
+    # Initialize the CountVectorizer
+    vectorizer = CountVectorizer()
+
+    # Fit the vectorizer with preprocessed comments
+    token_matrix = vectorizer.fit_transform(filtered_tokens)
+
+    # Initialize LatentDirichletAllocation model
+    num_topics = 10  # specify the number of topics
+    lda_model = LatentDirichletAllocation(n_components=num_topics, random_state=42)
+
+    # Fit the model with the token matrix
+    lda_model.fit(token_matrix)
+
+    # Print the top words for each topic
+    feature_names = vectorizer.get_feature_names_out()
+    for topic_idx, topic in enumerate(lda_model.components_):
+        top_words = [feature_names[i] for i in topic.argsort()[:-10 - 1:-1]]  # only select 10 top words of the topic
+        st.write(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
