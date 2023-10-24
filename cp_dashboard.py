@@ -362,8 +362,8 @@ with tab2:
 
     with st.spinner("Downloading zero shot classifier"):
       classifier = get_zero_shot_model()
-    labels = ['retail', 'food', 'facilities']
-
+    # labels = ['retail', 'food', 'facilities']
+    labels = ['car park', 'food', 'environment','services','price','furniture']
     # # Function to predict categories and add them to the DataFrame
     # def predict_categories(text):
     #     result = classifier(text, labels, multi_class_True)
@@ -372,15 +372,28 @@ with tab2:
 
     start_modelling_time = datetime.now()
     st.write(start_modelling_time)
+
+    @st.cache_data 
+    def predict_category(text):
+        return  text.apply(lambda x: classifier(x, labels)['labels'][0])
     with st.spinner('Building topic modelling'):
         # Apply the predict_categories function to all rows in the dataset
         # filtered_data['Predicted Category'] = filtered_data['text'].apply(predict_categories)
-
-        filtered_data['Predicted Category'] = filtered_data['text_short'].apply(lambda x: classifier(x, labels)['labels'][0])
+    
+        filtered_data['Predicted Category'] = predict_category(filtered_data['text_short'])
                                                     
         # Display the dataset with the predicted categories
+        selected_labels = st.multiselect("Select store:", options=labels, default = labels)
+
         st.write("Predicted Categories for Each Text:")
-        st.write(filtered_data[['text_short', 'Predicted Category']])
+        filtered_data_class = filtered_data[filtered_data['Predicted Category'].isin(selected_labels)]
+        st.write(filtered_data_class[['text_short', 'Predicted Category']])
+
+
+        category_counts = filtered_data['Predicted Category'].value_counts()
+
+        plot_category = px.bar(filtered_data, x=category_counts.values, y=category_counts.index, orientation='h')
+        st.plotly_chart(plot_category, use_container_width=True)
     end_modelling_time = datetime.now()
 
     st.write(end_modelling_time - start_modelling_time)
@@ -388,26 +401,26 @@ with tab2:
 
     #########################################################
 
-    #Using LDA
-    st.subheader("LDA")
-    # Preprocess the text data for topic modeling
-    filtered_tokens = filtered_data['text'].apply(preprocess_text)
+    # #Using LDA
+    # st.subheader("LDA")
+    # # Preprocess the text data for topic modeling
+    # filtered_tokens = filtered_data['text'].apply(preprocess_text)
 
-    # Initialize the CountVectorizer
-    vectorizer = CountVectorizer()
+    # # Initialize the CountVectorizer
+    # vectorizer = CountVectorizer()
 
-    # Fit the vectorizer with preprocessed comments
-    token_matrix = vectorizer.fit_transform(filtered_tokens)
+    # # Fit the vectorizer with preprocessed comments
+    # token_matrix = vectorizer.fit_transform(filtered_tokens)
 
-    # Initialize LatentDirichletAllocation model
-    num_topics = 10  # specify the number of topics
-    lda_model = LatentDirichletAllocation(n_components=num_topics, random_state=42)
+    # # Initialize LatentDirichletAllocation model
+    # num_topics = 10  # specify the number of topics
+    # lda_model = LatentDirichletAllocation(n_components=num_topics, random_state=42)
 
-    # Fit the model with the token matrix
-    lda_model.fit(token_matrix)
+    # # Fit the model with the token matrix
+    # lda_model.fit(token_matrix)
 
-    # Print the top words for each topic
-    feature_names = vectorizer.get_feature_names_out()
-    for topic_idx, topic in enumerate(lda_model.components_):
-        top_words = [feature_names[i] for i in topic.argsort()[:-10 - 1:-1]]  # only select 10 top words of the topic
-        st.write(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
+    # # Print the top words for each topic
+    # feature_names = vectorizer.get_feature_names_out()
+    # for topic_idx, topic in enumerate(lda_model.components_):
+    #     top_words = [feature_names[i] for i in topic.argsort()[:-10 - 1:-1]]  # only select 10 top words of the topic
+    #     st.write(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
