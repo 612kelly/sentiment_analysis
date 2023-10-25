@@ -206,9 +206,9 @@ with tab1:
             nltk.download('stopwords')
             words = [word for word in words if word.lower() not in stopwords.words("english")]
         
-        # Remove the word "ikea" & "the"
+        # Remove the word "ikea", "the", "ok", "la"
         # words = [word for word in words if word.lower() != "ikea"]
-        words = [word for word in words if word.lower() not in ["ikea", "the"]]
+        words = [word for word in words if word.lower() not in ["ikea", "the", "ok", "la"]]
 
         # Lemmatize words
         lemmatizer = WordNetLemmatizer()
@@ -341,10 +341,18 @@ with tab2:
 
     @st.cache_data
     def get_zero_shot_model():
+        # # Check if the selected language is Chinese
+        # if language.lower() == "chinese":
+        #     return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli') #cant access without permission
+        # else:
+        #     return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
+        
         return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
+        # return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli', use_auth_token='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')
 
     with st.spinner("Downloading zero shot classifier"):
       classifier = get_zero_shot_model()
+    
     # labels = ['retail', 'food', 'facilities']
     labels = ['car park', 'food', 'environment','services','price','furniture']
     # labels = ['car park', 'food', 'environment', 'retail']
