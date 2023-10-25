@@ -68,9 +68,6 @@ def load_and_filter_data(DATA_URL, language, store, start_date, end_date):
         (filtered_data['date'] >= start_date) &
         (filtered_data['date'] <= end_date)
     ]
-
-    # Filter data by year
-    # filtered_data = filtered_data[filtered_data['publishedatdate'].dt.year == year]
     
     return filtered_data
 
@@ -88,28 +85,21 @@ with st.sidebar.form(key ='Form Filter'):
     language = st.selectbox("Select language:", languages)
 
     # Filter 2 (select stores)
-    store = st.selectbox("Select store:", options=data["title"].unique())
+    store_with_most_reviews = data["title"].value_counts().idxmax()
+    store = st.selectbox("Select store:", options=data["title"].unique(), index=data["title"].unique().tolist().index(store_with_most_reviews))
 
-    # Filter 3 (year)
-    # year = st.sidebar.slider('year', 2016, 2023, 2022)
-
-    # Filter 4 (date range)
+    # Filter 3 (date range)
     min_date = min(data['date'])
     max_date = max(data['date'])
 
-    # # # Calculate default values within the range
+    # Calculate default values within the range
     default_start_date = min_date  # Set the default to the minimum date
     default_end_date = max_date  # Set the default to the maximum date
-    
-    # start_date = st.sidebar.date_input("Start Date", min_value=min_date, max_value=max_date)
-    # end_date = st.sidebar.date_input("End Date", min_value=min_date, max_value=max_date)
 
     start_date = st.date_input("Start Date", min_value = min_date, max_value = max_date, value=default_start_date)
     end_date = st.date_input("End Date", min_value = min_date, max_value = max_date, value=default_end_date)
 
     submitted1 = st.form_submit_button(label = 'Submit')
-
-
 
 
 # Load and filter data
@@ -136,26 +126,28 @@ with tab1:
         st.subheader('Number of Reviews')
         st.subheader(f"{total_reviews}")
 
-    with col2:
         average_rating = round(filtered_data["stars"].mean(),1)
         star_rating = ":star:" * int(round(average_rating,0))
         st.subheader('Average Star Reviews')
         st.subheader(f"{average_rating} {star_rating}")
 
-    with col3:
+    with col2:
         # Star Analysis Chart
-        # pie chart + add star filter
         st.subheader('Star Count')
 
         # Group data by star review and count occurrences
         stars_counts = filtered_data['stars'].value_counts()
 
         plot5 = px.bar(filtered_data, x=stars_counts.values, y=stars_counts.index, orientation='h')
+        plot5.update_xaxes(title='Count')
+        plot5.update_yaxes(title='Star Rating')
         st.plotly_chart(plot5, use_container_width=True)
+
+    #with col3:
+        
     #########################################################
 
     st.subheader('Sentiment Analysis')
-    # make 2 columns for second row of dashboard
     col4, col5, col6 = st.columns([45, 10, 45])
 
     # with col4:
@@ -197,14 +189,12 @@ with tab1:
 
     #########################################################
 
-    # make 2 columns for second row of dashboard
     col7, col8, col9 = st.columns([45, 10, 45])
 
     #########################################################
 
     # Word Cloud
     # Function to preprocess text
-    # remove ' and single letter
     def preprocess_text(text):
         # Tokenize the text
         words = nltk.word_tokenize(text)
@@ -216,13 +206,16 @@ with tab1:
             nltk.download('stopwords')
             words = [word for word in words if word.lower() not in stopwords.words("english")]
         
-        # Remove the word "ikea"
-        words = [word for word in words if word.lower() != "ikea"]
-        
-        
+        # Remove the word "ikea" & "the"
+        # words = [word for word in words if word.lower() != "ikea"]
+        words = [word for word in words if word.lower() not in ["ikea", "the"]]
+
         # Lemmatize words
         lemmatizer = WordNetLemmatizer()
         words = [lemmatizer.lemmatize(word) for word in words]
+
+        # Remove single letters and apostrophes
+        words = [word for word in words if len(word) > 1 and not re.match(r'^[\'\w\s]*$', word)]
         
         # Join the words back into a single string
         return " ".join(words)
@@ -245,14 +238,14 @@ with tab1:
             preprocessed_positive_text = preprocess_text(positive_text)
         preprocessed_negative_text = preprocess_text(negative_text)
 
-    with col7:
-        # Check if the selected language is Chinese
+    # Check if the selected language is Chinese
         if language.lower() == "chinese":
             font_path = (r"simhei\chinese.simhei.ttf")
             # the path to the Chinese font file
         else:
             font_path = None  # Use the default font for other languages
 
+    with col7:
         with st.spinner('Plotting Wordcloud'):
             # Postive Word Cloud
             st.subheader(f'Word Cloud for Positive Reviews in {language}')
@@ -268,13 +261,6 @@ with tab1:
             st.pyplot(positive_wc)
 
     with col9:
-        # Check if the selected language is Chinese
-        if language.lower() == "chinese":
-            font_path = (r"simhei\chinese.simhei.ttf")
-            # the path to the Chinese font file
-        else:
-            font_path = None  # Use the default font for other languages
-
         with st.spinner('Plotting Wordcloud'):
             # Negative Word Cloud
             st.subheader(f'Word Cloud for Negative Reviews in {language}')
@@ -327,30 +313,27 @@ with tab1:
         fig.update_traces(hovertemplate="<b>%{y}</b><br>Count=%{x}", marker_color=color)
         return fig
 
-    with col10:
-        # plot the top 10 occuring words 
-        top_unigram = get_top_n_gram(filtered_data, ngram_range=(1, 1), n=10)
-        unigram_plot = plot_n_gram(
-            top_unigram, title="Top 10 Occuring Words"
-        )
-        unigram_plot.update_layout(height=350)
-        st.plotly_chart(unigram_plot, use_container_width=True)
+    # with col10:
+    #     # plot the top 10 occuring words 
+    #     top_unigram = get_top_n_gram(filtered_data, ngram_range=(1, 1), n=10)
+    #     unigram_plot = plot_n_gram(
+    #         top_unigram, title="Top 10 Occuring Words"
+    #     )
+    #     unigram_plot.update_layout(height=350)
+    #     st.plotly_chart(unigram_plot, use_container_width=True)
 
-    with col12:
-        top_bigram = get_top_n_gram(filtered_data, ngram_range=(2, 2), n=10)
-        bigram_plot = plot_n_gram(
-            top_bigram, title="Top 10 Occuring Bigrams"
-        )
-        bigram_plot.update_layout(height=350)
-        st.plotly_chart(bigram_plot, use_container_width=True)
+    # with col12:
+    #     top_bigram = get_top_n_gram(filtered_data, ngram_range=(2, 2), n=10)
+    #     bigram_plot = plot_n_gram(
+    #         top_bigram, title="Top 10 Occuring Bigrams"
+    #     )
+    #     bigram_plot.update_layout(height=350)
+    #     st.plotly_chart(bigram_plot, use_container_width=True)
 
     #########################################################
 
 
 with tab2:
-    # make 2 columns for second row of dashboard
-    col13, col14, col15 = st.columns([45, 10, 45])
-
     st.subheader('Topic Modelling')
 
     # Using Zero-shot classification
@@ -364,6 +347,8 @@ with tab2:
       classifier = get_zero_shot_model()
     # labels = ['retail', 'food', 'facilities']
     labels = ['car park', 'food', 'environment','services','price','furniture']
+    # labels = ['car park', 'food', 'environment', 'retail']
+
     # # Function to predict categories and add them to the DataFrame
     # def predict_categories(text):
     #     result = classifier(text, labels, multi_class_True)
@@ -387,17 +372,60 @@ with tab2:
 
         st.write("Predicted Categories for Each Text:")
         filtered_data_class = filtered_data[filtered_data['Predicted Category'].isin(selected_labels)]
-        st.write(filtered_data_class[['text_short', 'Predicted Category']])
-
+        st.write(filtered_data_class[['text_short', 'Predicted Category', 'sent_res']])
 
         category_counts = filtered_data['Predicted Category'].value_counts()
+        category_counts_sorted = category_counts.sort_values(ascending=False)
 
-        plot_category = px.bar(filtered_data, x=category_counts.values, y=category_counts.index, orientation='h')
+        plot_category = px.bar(filtered_data, x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
         st.plotly_chart(plot_category, use_container_width=True)
     end_modelling_time = datetime.now()
 
     st.write(end_modelling_time - start_modelling_time)
 
+    def generate_word_cloud(text, title, font_path=None):
+        st.subheader(title)
+        wordcloud = WordCloud(
+            background_color='white',
+            font_path=font_path,
+        ).generate(text)
+
+        # Create a figure for the word cloud and display it
+        wc_figure, ax = plt.subplots(figsize=(10, 5))
+        ax.imshow(wordcloud, interpolation='bilinear')
+        ax.axis('off')
+        return wc_figure
+    
+    # Find the top category labels if category counts is more than 100 else word cloud won't be able to display
+    # top_labels = category_counts.index[:2]
+    top_labels = category_counts[category_counts >= 100].index
+
+    # Generate and display word clouds for positive and negative sentiments by looping through the labels and create word clouds
+    for label in top_labels:
+        st.subheader(f'Word Clouds for {label} in {language}')
+        
+        # Filter the data for the current label
+        label_data = filtered_data_class[filtered_data_class['Predicted Category'] == label]
+
+        # Separate positive and negative sentiments
+        positive_text = " ".join(label_data[label_data['sent_res'] == 'positive']['text_short'])
+        negative_text = " ".join(label_data[label_data['sent_res'] == 'negative']['text_short'])
+
+        # Preprocess the text for the word clouds
+        preprocessed_positive_text = preprocess_text(positive_text)
+        preprocessed_negative_text = preprocess_text(negative_text)
+
+        # Generate and display the word clouds for positive and negative sentiments
+        # Create two columns for positive and negative word clouds
+        col1, col2 = st.columns(2)
+
+        with col1:
+            positive_wc_figure = generate_word_cloud(preprocessed_positive_text, f'Positive', font_path=font_path)
+            st.pyplot(positive_wc_figure)
+
+        with col2:
+            negative_wc_figure = generate_word_cloud(preprocessed_negative_text, f'Negative', font_path=font_path)
+            st.pyplot(negative_wc_figure)
 
     #########################################################
 
