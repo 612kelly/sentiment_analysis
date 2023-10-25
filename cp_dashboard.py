@@ -299,19 +299,19 @@ with tab1:
         df["words"] = df["words"].str.title()
         return df
 
-    def plot_n_gram(n_gram_df, title, color="#54A24B"):
-        # plot the top n-grams frequencies in a bar chart
-        fig = px.bar(
-            x=n_gram_df.counts,
-            y=n_gram_df.words,
-            title="<b>{}</b>".format(title),
-            text_auto=True,
-        )
-        fig.update_layout(plot_bgcolor="white")
-        fig.update_xaxes(title=None)
-        fig.update_yaxes(autorange="reversed", title=None)
-        fig.update_traces(hovertemplate="<b>%{y}</b><br>Count=%{x}", marker_color=color)
-        return fig
+    # def plot_n_gram(n_gram_df, title, color="#54A24B"):
+    #     # plot the top n-grams frequencies in a bar chart
+    #     fig = px.bar(
+    #         x=n_gram_df.counts,
+    #         y=n_gram_df.words,
+    #         title="<b>{}</b>".format(title),
+    #         text_auto=True,
+    #     )
+    #     fig.update_layout(plot_bgcolor="white")
+    #     fig.update_xaxes(title=None)
+    #     fig.update_yaxes(autorange="reversed", title=None)
+    #     fig.update_traces(hovertemplate="<b>%{y}</b><br>Count=%{x}", marker_color=color)
+    #     return fig
 
     # with col10:
     #     # plot the top 10 occuring words 
