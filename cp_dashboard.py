@@ -13,7 +13,7 @@ import re
 from sklearn.feature_extraction.text import CountVectorizer
 # from sklearn.decomposition import LatentDirichletAllocation
 from transformers import pipeline
-
+from dateutil.relativedelta import relativedelta
 from datetime import datetime
 
 
@@ -94,7 +94,7 @@ with st.sidebar.form(key ='Form Filter'):
     max_date = max(data['date'])
 
     # Calculate default values within the range
-    default_start_date = min_date  # Set the default to the minimum date
+    default_start_date = max_date - relativedelta(years=2) # min_date  # Set the default to the minimum date
     default_end_date = max_date  # Set the default to the maximum date
 
     start_date = st.date_input("Start Date", min_value = min_date, max_value = max_date, value=default_start_date)
