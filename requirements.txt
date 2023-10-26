@@ -7,3 +7,6 @@ wordcloud
 sklearn
 transformers
 datetime
+torch
+torchvision
+torchaudio
