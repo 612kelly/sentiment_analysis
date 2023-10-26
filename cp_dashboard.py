@@ -237,7 +237,7 @@ with tab1:
             nltk.download('omw-1.4') 
             nltk.download('wordnet') 
             preprocessed_positive_text = preprocess_text(positive_text)
-            preprocessed_negative_text = preprocess_text(negative_text)
+        preprocessed_negative_text = preprocess_text(negative_text)
 
     # Check if the selected language is Chinese
         if language.lower() == "chinese":
