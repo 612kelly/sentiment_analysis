@@ -7,11 +7,11 @@ import matplotlib.pyplot as plt
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-from nltk.tokenize import word_tokenize
+# from nltk.tokenize import word_tokenize
 import re
-from matplotlib.font_manager import FontProperties
+# from matplotlib.font_manager import FontProperties
 from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.decomposition import LatentDirichletAllocation
+# from sklearn.decomposition import LatentDirichletAllocation
 from transformers import pipeline
 
 from datetime import datetime
