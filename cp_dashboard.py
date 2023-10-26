@@ -17,10 +17,9 @@ from transformers import pipeline
 from datetime import datetime
 
 
-
-# nltk.download("stopwords")
-# nltk.download("wordnet")
-# nltk.download('punkt')
+nltk.download("stopwords")
+nltk.download("wordnet")
+nltk.download('punkt')
 
 #########################################################
 
