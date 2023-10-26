@@ -461,3 +461,13 @@ with tab2:
     # for topic_idx, topic in enumerate(lda_model.components_):
     #     top_words = [feature_names[i] for i in topic.argsort()[:-10 - 1:-1]]  # only select 10 top words of the topic
     #     st.write(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
+
+#########################################################
+
+with tab3:
+    st.header("About")
+
+    st.write("This dashboard displays analysis from IKEA Malaysia reviews obtained from Google.")
+    st.write(f"Date range of data ranges from {min_date} to {max_date}.")
+
+    st.write("You may select the filter for analysis to be display. Do click the Submit button for the analysis to run.")
