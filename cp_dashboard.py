@@ -282,6 +282,7 @@ with tab1:
 
 with tab2:
     st.subheader('Topic Modelling')
+    st.write("temporary removed due to cache issue")
 
     # # Using Zero-shot classification
     # # Initialize the zero-shot classification pipeline
