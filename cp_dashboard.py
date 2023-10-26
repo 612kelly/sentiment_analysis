@@ -86,7 +86,8 @@ with st.sidebar.form(key ='Form Filter'):
 
     # Filter 2 (select stores)
     store_with_most_reviews = data["title"].value_counts().idxmax()
-    store = st.selectbox("Select store:", options=data["title"].unique(), index=data["title"].unique().tolist().index(store_with_most_reviews))
+    #store = st.selectbox("Select store:", options=data["title"].unique(), index=data["title"].unique().tolist().index(store_with_most_reviews))
+    store = st.selectbox("Select store:", options=data["title"].unique())
 
     # Filter 3 (date range)
     min_date = min(data['date'])
@@ -278,26 +279,26 @@ with tab1:
     #########################################################
 
     # make 2 columns for second row of dashboard
-    col10, col11, col12 = st.columns([45, 10, 45])
+    # col10, col11, col12 = st.columns([45, 10, 45])
 
-    def get_top_n_gram(filtered_data, ngram_range, n=10):
-        # load the corpus and vectorizer
-        corpus = filtered_data['text']
-        vectorizer = CountVectorizer(
-            analyzer="word", ngram_range=ngram_range
-        )
+    # def get_top_n_gram(filtered_data, ngram_range, n=10):
+    #     # load the corpus and vectorizer
+    #     corpus = filtered_data['text']
+    #     vectorizer = CountVectorizer(
+    #         analyzer="word", ngram_range=ngram_range
+    #     )
 
-        # use the vectorizer to count the n-grams frequencies
-        X = vectorizer.fit_transform(corpus.astype(str).values)
-        words = vectorizer.get_feature_names_out()
-        words_count = np.ravel(X.sum(axis=0))
+    #     # use the vectorizer to count the n-grams frequencies
+    #     X = vectorizer.fit_transform(corpus.astype(str).values)
+    #     words = vectorizer.get_feature_names_out()
+    #     words_count = np.ravel(X.sum(axis=0))
 
-        # store the results in a dataframe
-        df = pd.DataFrame(zip(words, words_count))
-        df.columns = ["words", "counts"]
-        df = df.sort_values(by="counts", ascending=False).head(n)
-        df["words"] = df["words"].str.title()
-        return df
+    #     # store the results in a dataframe
+    #     df = pd.DataFrame(zip(words, words_count))
+    #     df.columns = ["words", "counts"]
+    #     df = df.sort_values(by="counts", ascending=False).head(n)
+    #     df["words"] = df["words"].str.title()
+    #     return df
 
     # def plot_n_gram(n_gram_df, title, color="#54A24B"):
     #     # plot the top n-grams frequencies in a bar chart
