@@ -287,49 +287,49 @@ with tab2:
     # Initialize the zero-shot classification pipeline
 
     @st.cache_data
-    def get_zero_shot_model():
-        # # Check if the selected language is Chinese
-        # if language.lower() == "chinese":
-        #     return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli') #cant access without permission
-        # else:
-        #     return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
+    # def get_zero_shot_model():
+    #     # # Check if the selected language is Chinese
+    #     # if language.lower() == "chinese":
+    #     #     return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli') #cant access without permission
+    #     # else:
+    #     #     return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
         
-        return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
-        # return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli', use_auth_token='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')
+    #     return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
+    #     # return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli', use_auth_token='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')
 
-    with st.spinner("Downloading zero shot classifier"):
-      classifier = get_zero_shot_model()
+    # with st.spinner("Downloading zero shot classifier"):
+    #   classifier = get_zero_shot_model()
     
     # labels = ['retail', 'food', 'facilities']
     labels = ['car park', 'food', 'environment','services','price','furniture']
     # labels = ['car park', 'food', 'environment', 'retail']
 
-    start_modelling_time = datetime.now()
-    st.write(start_modelling_time)
+    # start_modelling_time = datetime.now()
+    # st.write(start_modelling_time)
 
-    @st.cache_data 
-    def predict_category(text):
-        return  text.apply(lambda x: classifier(x, labels)['labels'][0])
+    # @st.cache_data 
+    # def predict_category(text):
+    #     return  text.apply(lambda x: classifier(x, labels)['labels'][0])
     
-    with st.spinner('Building topic modelling'):
-        # Apply the predict_categories function to all rows in the dataset
-        # filtered_data['Predicted Category'] = filtered_data['text'].apply(predict_categories)
+    # with st.spinner('Building topic modelling'):
+    #     # Apply the predict_categories function to all rows in the dataset
+    #     # filtered_data['Predicted Category'] = filtered_data['text'].apply(predict_categories)
     
-        filtered_data['Predicted Category'] = predict_category(filtered_data['text_short'])
+    #     filtered_data['Predicted Category'] = predict_category(filtered_data['text_short'])
                                                     
-        # Display the dataset with the predicted categories
-        selected_labels = st.multiselect("Select store:", options=labels, default = labels)
+    #     # Display the dataset with the predicted categories
+    #     selected_labels = st.multiselect("Select store:", options=labels, default = labels)
 
-        st.write("Predicted Categories for Each Text:")
-        filtered_data_class = filtered_data[filtered_data['Predicted Category'].isin(selected_labels)]
-        st.write(filtered_data_class[['text_short', 'Predicted Category', 'sent_res']])
+    #     st.write("Predicted Categories for Each Text:")
+    #     filtered_data_class = filtered_data[filtered_data['Predicted Category'].isin(selected_labels)]
+    #     st.write(filtered_data_class[['text_short', 'Predicted Category', 'sent_res']])
 
-        category_counts = filtered_data['Predicted Category'].value_counts()
-        category_counts_sorted = category_counts.sort_values(ascending=False)
+    #     category_counts = filtered_data['Predicted Category'].value_counts()
+    #     category_counts_sorted = category_counts.sort_values(ascending=False)
 
-        plot_category = px.bar(filtered_data, x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
-        st.plotly_chart(plot_category, use_container_width=True)
-    end_modelling_time = datetime.now()
+    #     plot_category = px.bar(filtered_data, x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
+    #     st.plotly_chart(plot_category, use_container_width=True)
+    # end_modelling_time = datetime.now()
 
     st.write(end_modelling_time - start_modelling_time)
 
@@ -354,16 +354,16 @@ with tab2:
     for label in top_labels:
         st.subheader(f'Word Clouds for {label} in {language}')
         
-        # Filter the data for the current label
-        label_data = filtered_data_class[filtered_data_class['Predicted Category'] == label]
+        # # Filter the data for the current label
+        # label_data = filtered_data_class[filtered_data_class['Predicted Category'] == label]
 
-        # Separate positive and negative sentiments
-        positive_text = " ".join(label_data[label_data['sent_res'] == 'positive']['text_short'])
-        negative_text = " ".join(label_data[label_data['sent_res'] == 'negative']['text_short'])
+        # # Separate positive and negative sentiments
+        # positive_text = " ".join(label_data[label_data['sent_res'] == 'positive']['text_short'])
+        # negative_text = " ".join(label_data[label_data['sent_res'] == 'negative']['text_short'])
 
-        # Preprocess the text for the word clouds
-        preprocessed_positive_text = preprocess_text(positive_text)
-        preprocessed_negative_text = preprocess_text(negative_text)
+        # # Preprocess the text for the word clouds
+        # preprocessed_positive_text = preprocess_text(positive_text)
+        # preprocessed_negative_text = preprocess_text(negative_text)
 
         # Generate and display the word clouds for positive and negative sentiments
         # Create two columns for positive and negative word clouds
