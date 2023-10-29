@@ -15,6 +15,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from transformers import pipeline
 from dateutil.relativedelta import relativedelta
 from datetime import datetime
+from textblob import TextBlob
 
 
 nltk.download("stopwords")
@@ -228,6 +229,7 @@ with tab1:
     # Combine positive and negative reviews text for this language
     positive_text = " ".join(positive_reviews['text'])
     negative_text = " ".join(negative_reviews['text'])
+    all_text = " ".join(filtered_data['text'])
 
     with st.spinner('Preprocessing data for wordcloud'):
         # Preprocess the text
@@ -278,7 +280,95 @@ with tab1:
             st.pyplot(negative_wc)
 
     #########################################################
+        
+    st.subheader('Polarity and Subjectivity Analysis')
+    col10, col11, col12 = st.columns([45, 10, 45])
+    #########################################################
 
+    sentiments = []
+    for reviews in filtered_data['text']:
+        blob = TextBlob(reviews)
+        sentiment_polarity = blob.sentiment.polarity
+        sentiments.append(sentiment_polarity)
+
+    # Adding sentiment to comments by creating a new list of dictionaries with comments and sentiments
+    reviews_with_sentiment_polarity = []
+    for i, reviews in enumerate(filtered_data['text']):
+        review_dict = {
+            "reviews": reviews,
+            "sentiment": sentiments[i]
+        }
+        reviews_with_sentiment_polarity.append(review_dict)
+
+    # Bar chart - Sentiment Analysis (Polarity)
+    # Extract sentiment values from reviews_with_sentiment_polarity dictionary
+    sentiments = [entry['sentiment'] for entry in reviews_with_sentiment_polarity]
+
+    # Count the occurrences of different sentiment categories
+    sentiment_counts = {
+        "Positive": len([sentiment for sentiment in sentiments if sentiment > 0]),
+        "Negative": len([sentiment for sentiment in sentiments if sentiment < 0]),
+        "Neutral": len([sentiment for sentiment in sentiments if sentiment == 0])
+    }
+
+    labels = list(sentiment_counts.keys())
+    values = list(sentiment_counts.values())
+
+    with col10:
+        polarity_analysis = px.bar(x=labels, y=values, title='Sentiment Analysis - Polarity')
+        polarity_analysis.update_xaxes(title_text='Sentiment')
+        polarity_analysis.update_yaxes(title_text='Count')
+        st.plotly_chart(polarity_analysis)
+
+    with col12:
+        polarity_dist = px.histogram(sentiments, nbins=5, title='Sentiment Distribution - Polarity')
+        polarity_dist.update_xaxes(title_text='Sentiment')
+        polarity_dist.update_yaxes(title_text='Count')
+        st.plotly_chart(polarity_dist)
+
+    #########################################################
+
+    sentiments2 = []
+    for reviews in filtered_data['text']:
+        blob = TextBlob(reviews)
+        sentiment_subjectivity = blob.sentiment.subjectivity
+        sentiments2.append(sentiment_subjectivity)
+
+    # Adding sentiment to comments by creating a new list of dictionaries with comments and sentiments
+    reviews_with_sentiment_subjectivity = []
+    for i, reviews in enumerate(filtered_data['text']):
+        review_dict = {
+            "reviews": reviews,
+            "sentiment": sentiments2[i]
+        }
+        reviews_with_sentiment_subjectivity.append(review_dict)
+
+    # Bar chart - Sentiment Analysis (Polarity)
+    # Extract sentiment values from reviews_with_sentiment_polarity dictionary
+    sentiments2 = [entry['sentiment'] for entry in reviews_with_sentiment_subjectivity]
+
+    # Count the occurrences of different sentiment categories
+    sentiment_counts = {
+        "Subjective": len([sentiment for sentiment in sentiments2 if sentiment >0]),
+        "Objective": len([sentiment for sentiment in sentiments2 if sentiment ==0])
+    }
+
+    labels = list(sentiment_counts.keys())
+    values = list(sentiment_counts.values())
+
+    with col10:
+        subjectivity_analysis = px.bar(x=labels, y=values, title='Sentiment Analysis - Subjectivity')
+        subjectivity_analysis.update_xaxes(title_text='Sentiment')
+        subjectivity_analysis.update_yaxes(title_text='Count')
+        st.plotly_chart(subjectivity_analysis)
+
+    with col12:
+        subjectivity_polarity = px.histogram(sentiments2, nbins=5, title='Sentiment Distribution - Subjectivity')
+        subjectivity_polarity.update_xaxes(title_text='Sentiment')
+        subjectivity_polarity.update_yaxes(title_text='Count')
+        st.plotly_chart(subjectivity_polarity)
+
+    #########################################################
 
 with tab2:
     st.subheader('Topic Modelling')
@@ -379,32 +469,6 @@ with tab2:
     #         st.pyplot(negative_wc_figure)
 
     #########################################################
-
-    # #Using LDA
-    # st.subheader("LDA")
-    # # Preprocess the text data for topic modeling
-    # filtered_tokens = filtered_data['text'].apply(preprocess_text)
-
-    # # Initialize the CountVectorizer
-    # vectorizer = CountVectorizer()
-
-    # # Fit the vectorizer with preprocessed comments
-    # token_matrix = vectorizer.fit_transform(filtered_tokens)
-
-    # # Initialize LatentDirichletAllocation model
-    # num_topics = 10  # specify the number of topics
-    # lda_model = LatentDirichletAllocation(n_components=num_topics, random_state=42)
-
-    # # Fit the model with the token matrix
-    # lda_model.fit(token_matrix)
-
-    # # Print the top words for each topic
-    # feature_names = vectorizer.get_feature_names_out()
-    # for topic_idx, topic in enumerate(lda_model.components_):
-    #     top_words = [feature_names[i] for i in topic.argsort()[:-10 - 1:-1]]  # only select 10 top words of the topic
-    #     st.write(f"Topic {topic_idx + 1}: {' '.join(top_words)}")
-
-#########################################################
 
 with tab3:
     st.header("About")
