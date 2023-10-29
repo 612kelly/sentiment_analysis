@@ -10,4 +10,4 @@ datetime
 torch
 torchvision
 torchaudio
-TextBlob
+textblob
