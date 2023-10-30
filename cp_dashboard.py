@@ -101,7 +101,13 @@ with st.sidebar.form(key ='Form Filter'):
     start_date = st.date_input("Start Date", min_value = min_date, max_value = max_date, value=default_start_date)
     end_date = st.date_input("End Date", min_value = min_date, max_value = max_date, value=default_end_date)
 
-    submitted1 = st.form_submit_button(label = 'Submit')
+    if start_date > end_date:
+        st.warning("Start Date cannot be after End Date. Please select a valid date range.")
+        submitted1 = st.form_submit_button(label='Submit')
+    else:
+        submitted1 = st.form_submit_button(label='Submit')
+
+    # submitted1 = st.form_submit_button(label = 'Submit')
 
 
 # Load and filter data
@@ -112,14 +118,9 @@ with st.spinner('Loading data'):
 tab1, tab2, tab3 = st.tabs(["Overview", "Topic Modelling", "About"])
 
 with tab1:
-    if st.checkbox('Show filtered data'):
-        st.subheader('Raw data')
-        st.write(filtered_data)
-
-    #########################################################
-
+    
     # make 3 columns for first row of dashboard
-    col1, col2, col3 = st.columns([35, 30, 30])
+    col1, col2, col3 = st.columns([45, 10, 45])
 
     #########################################################
 
@@ -133,7 +134,7 @@ with tab1:
         st.subheader('Average Star Reviews')
         st.subheader(f"{average_rating} {star_rating}")
 
-    with col2:
+    with col3:
         # Star Analysis Chart
         st.subheader('Star Count')
 
@@ -176,10 +177,9 @@ with tab1:
             values=sentiment_counts.values,
             names=sentiment_counts.index,
             hole=0.3,
-            title=f'Sentiment Distribution for {language} Reviews',
+            #title=f'Sentiment Distribution for {language} Reviews',
             color=sentiment_counts.index,
-            # set the color of positive to blue and negative to orange
-            color_discrete_map={"Positive": "#1F77B4", "Negative": "#FF7F0E"},
+            color_discrete_map={"positive": "#7BB662", "negative": "#E03C32", "neutral": "#FFD301"},
         )
         pie_chart.update_traces(
             textposition="inside",
@@ -210,7 +210,7 @@ with tab1:
         
         # Remove the word "ikea", "the", "ok", "la"
         # words = [word for word in words if word.lower() != "ikea"]
-        words = [word for word in words if word.lower() not in ["ikea", "the", "ok", "la"]]
+        words = [word for word in words if word.lower() not in ["ikea", "the", "ok", "la", "good", "bad"]]
 
         # Lemmatize words
         lemmatizer = WordNetLemmatizer()
@@ -252,7 +252,7 @@ with tab1:
     with col7:
         with st.spinner('Plotting Wordcloud'):
             # Postive Word Cloud
-            st.subheader(f'Word Cloud for Positive Reviews in {language}')
+            st.subheader(f'Positive Reviews')
             positive_wordcloud = WordCloud(
                 background_color='white',
                 font_path=font_path,  # Set font path based on language
@@ -267,7 +267,7 @@ with tab1:
     with col9:
         with st.spinner('Plotting Wordcloud'):
             # Negative Word Cloud
-            st.subheader(f'Word Cloud for Negative Reviews in {language}')
+            st.subheader(f'Negative Reviews')
             negative_wordcloud = WordCloud(
                 background_color='white',
                 font_path=font_path,  # Set font path based on language
@@ -370,103 +370,111 @@ with tab1:
 
     #########################################################
 
+    st.subheader('Raw data')
+    if language.lower() == "english":
+        st.write(filtered_data[['publishedatdate', 'stars', 'text', 'res_dict', 'sent_res', 'sent_score']])
+    else:
+        st.write(filtered_data[['publishedatdate', 'stars', 'text', 'texttranslated', 'res_dict', 'sent_res', 'sent_score']])
+
+    #########################################################
+
 with tab2:
     st.subheader('Topic Modelling')
-    st.write("temporary removed due to cache issue")
+    # st.write("temporary removed due to cache issue")
 
-    # # Using Zero-shot classification
-    # # Initialize the zero-shot classification pipeline
+    # Using Zero-shot classification
+    # Initialize the zero-shot classification pipeline
 
-    # @st.cache_data
-    # def get_zero_shot_model():
-    #     # # Check if the selected language is Chinese
-    #     # if language.lower() == "chinese":
-    #     #     return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli') #cant access without permission
-    #     # else:
-    #     #     return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
+    @st.cache_data
+    def get_zero_shot_model():
+        # # Check if the selected language is Chinese
+        # if language.lower() == "chinese":
+        #     return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli') #cant access without permission
+        # else:
+        #     return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
         
-    #     return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
-    #     # return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli', use_auth_token='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')
+        return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
+        # return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli', use_auth_token='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')
 
-    # with st.spinner("Downloading zero shot classifier"):
-    #   classifier = get_zero_shot_model()
+    with st.spinner("Downloading zero shot classifier"):
+      classifier = get_zero_shot_model()
     
-    # # labels = ['retail', 'food', 'facilities']
-    # labels = ['car park', 'food', 'environment','services','price','furniture']
-    # # labels = ['car park', 'food', 'environment', 'retail']
+    # labels = ['retail', 'food', 'facilities']
+    labels = ['car park', 'food', 'environment','services','price','furniture']
+    # labels = ['car park', 'food', 'environment', 'retail']
 
-    # start_modelling_time = datetime.now()
-    # st.write(start_modelling_time)
+    start_modelling_time = datetime.now()
+    st.write(start_modelling_time)
 
-    # @st.cache_data 
-    # def predict_category(text):
-    #     return  text.apply(lambda x: classifier(x, labels)['labels'][0])
+    @st.cache_data 
+    def predict_category(text):
+        return  text.apply(lambda x: classifier(x, labels)['labels'][0])
     
-    # with st.spinner('Building topic modelling'):
-    #     # Apply the predict_categories function to all rows in the dataset
-    #     # filtered_data['Predicted Category'] = filtered_data['text'].apply(predict_categories)
+    with st.spinner('Building topic modelling'):
+        # Apply the predict_categories function to all rows in the dataset
+        # filtered_data['Predicted Category'] = filtered_data['text'].apply(predict_categories)
     
-    #     filtered_data['Predicted Category'] = predict_category(filtered_data['text_short'])
+        filtered_data['Predicted Category'] = predict_category(filtered_data['text_short'])
                                                     
-    #     # Display the dataset with the predicted categories
-    #     selected_labels = st.multiselect("Select store:", options=labels, default = labels)
+        # Display the dataset with the predicted categories
+        selected_labels = st.multiselect("Select store:", options=labels, default = labels)
 
-    #     st.write("Predicted Categories for Each Text:")
-    #     filtered_data_class = filtered_data[filtered_data['Predicted Category'].isin(selected_labels)]
-    #     st.write(filtered_data_class[['text_short', 'Predicted Category', 'sent_res']])
+        st.write("Predicted Categories for Each Text:")
+        filtered_data_class = filtered_data[filtered_data['Predicted Category'].isin(selected_labels)]
+        st.write(filtered_data_class[['text_short', 'Predicted Category', 'sent_res']])
 
-    #     category_counts = filtered_data['Predicted Category'].value_counts()
-    #     category_counts_sorted = category_counts.sort_values(ascending=False)
+        category_counts = filtered_data['Predicted Category'].value_counts()
+        category_counts_sorted = category_counts.sort_values(ascending=False)
 
-    #     plot_category = px.bar(filtered_data, x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
-    #     st.plotly_chart(plot_category, use_container_width=True)
-    # end_modelling_time = datetime.now()
+        plot_category = px.bar(filtered_data, x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
+        st.plotly_chart(plot_category, use_container_width=True)
+    end_modelling_time = datetime.now()
 
-    # st.write(end_modelling_time - start_modelling_time)
+    st.write(end_modelling_time - start_modelling_time)
 
-    # def generate_word_cloud(text, title, font_path=None):
-    #     st.subheader(title)
-    #     wordcloud = WordCloud(
-    #         background_color='white',
-    #         font_path=font_path,
-    #     ).generate(text)
+    def generate_word_cloud(text, title, font_path=None):
+        st.subheader(title)
+        wordcloud = WordCloud(
+            background_color='white',
+            font_path=font_path,
+        ).generate(text)
 
-    #     # Create a figure for the word cloud and display it
-    #     wc_figure, ax = plt.subplots(figsize=(10, 5))
-    #     ax.imshow(wordcloud, interpolation='bilinear')
-    #     ax.axis('off')
-    #     return wc_figure
+        # Create a figure for the word cloud and display it
+        wc_figure, ax = plt.subplots(figsize=(10, 5))
+        ax.imshow(wordcloud, interpolation='bilinear')
+        ax.axis('off')
+        return wc_figure
     
-    # # Find the top category labels if category counts is more than 100 else word cloud won't be able to display
-    # # top_labels = category_counts.index[:2]
-    # top_labels = category_counts[category_counts >= 100].index
+    # Find the top category labels if category counts is more than 100 else word cloud won't be able to display
+    # top_labels = category_counts.index[:2]
+    top_labels = category_counts[category_counts >= 100].index
 
-    # # Generate and display word clouds for positive and negative sentiments by looping through the labels and create word clouds
-    # for label in top_labels:
-    #     st.subheader(f'Word Clouds for {label} in {language}')
+    # Generate and display word clouds for positive and negative sentiments by looping through the labels and create word clouds
+    for label in top_labels:
+        st.subheader(f'Word Clouds for {label}')
         
-    #     # Filter the data for the current label
-    #     label_data = filtered_data_class[filtered_data_class['Predicted Category'] == label]
+        # Filter the data for the current label
+        label_data = filtered_data_class[filtered_data_class['Predicted Category'] == label]
 
-    #     # Separate positive and negative sentiments
-    #     positive_text = " ".join(label_data[label_data['sent_res'] == 'positive']['text_short'])
-    #     negative_text = " ".join(label_data[label_data['sent_res'] == 'negative']['text_short'])
+        # Separate positive and negative sentiments
+        positive_text = " ".join(label_data[label_data['sent_res'] == 'positive']['text_short'])
+        negative_text = " ".join(label_data[label_data['sent_res'] == 'negative']['text_short'])
 
-    #     # Preprocess the text for the word clouds
-    #     preprocessed_positive_text = preprocess_text(positive_text)
-    #     preprocessed_negative_text = preprocess_text(negative_text)
+        # Preprocess the text for the word clouds
+        preprocessed_positive_text = preprocess_text(positive_text)
+        preprocessed_negative_text = preprocess_text(negative_text)
 
-    #     # Generate and display the word clouds for positive and negative sentiments
-    #     # Create two columns for positive and negative word clouds
-    #     col1, col2 = st.columns(2)
+        # Generate and display the word clouds for positive and negative sentiments
+        # Create two columns for positive and negative word clouds
+        col1, col2 = st.columns(2)
 
-    #     with col1:
-    #         positive_wc_figure = generate_word_cloud(preprocessed_positive_text, f'Positive', font_path=font_path)
-    #         st.pyplot(positive_wc_figure)
+        with col1:
+            positive_wc_figure = generate_word_cloud(preprocessed_positive_text, f'Positive', font_path=font_path)
+            st.pyplot(positive_wc_figure)
 
-    #     with col2:
-    #         negative_wc_figure = generate_word_cloud(preprocessed_negative_text, f'Negative', font_path=font_path)
-    #         st.pyplot(negative_wc_figure)
+        with col2:
+            negative_wc_figure = generate_word_cloud(preprocessed_negative_text, f'Negative', font_path=font_path)
+            st.pyplot(negative_wc_figure)
 
     #########################################################
 
