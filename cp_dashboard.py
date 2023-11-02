@@ -39,7 +39,7 @@ st.title('Sentiment Analaysis Dashboard')
 
 #########################################################
 
-DATA_URL = (r"ikea_reviews_sentiment2.parquet")
+DATA_URL = (r"ikea_reviews_sentiment3.parquet")
 data = pd.read_parquet(DATA_URL)
 data['publishedAtDate'] = pd.to_datetime(data['publishedAtDate'])
 data['date'] = data['publishedAtDate'].dt.date
@@ -114,11 +114,23 @@ with st.sidebar.form(key ='Form Filter'):
 with st.spinner('Loading data'):
     filtered_data = load_and_filter_data(DATA_URL, language, store, start_date, end_date)
 
-    st.write(filtered_data)
+    #st.write(filtered_data)
     
 tab1, tab2, tab3 = st.tabs(["Overview", "Topic Modelling", "About"])
 
+    #########################################################
+
 with tab1:
+    st.header("About")
+
+    st.write("This dashboard displays analysis from IKEA Malaysia reviews obtained from Google.")
+    st.write(f"Date range of data ranges from {min_date} to {max_date}.")
+
+    st.write("You may select the filter for analysis to be display. Do click the Submit button for the analysis to run.")
+
+    #########################################################
+        
+with tab2:
     
     # make 3 columns for first row of dashboard
     col1, col2, col3 = st.columns([45, 10, 45])
@@ -379,57 +391,26 @@ with tab1:
 
     #########################################################
 
-with tab2:
+with tab3:
     st.subheader('Topic Modelling')
-    # st.write("temporary removed due to cache issue")
 
     # Using Zero-shot classification
-    # Initialize the zero-shot classification pipeline
-
-    # @st.cache_data
-    # def get_zero_shot_model():
-    #     # # Check if the selected language is Chinese
-    #     # if language.lower() == "chinese":
-    #     #     return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli') #cant access without permission
-    #     # else:
-    #     #     return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
-        
-    #     return pipeline('zero-shot-classification', model='joeddav/distilbert-base-uncased-agnews-student')
-    #     # return pipeline('zero-shot-classification', model='joeddav/xlm-roberta-large-xnli', use_auth_token='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')
-
-    # with st.spinner("Downloading zero shot classifier"):
-    #   classifier = get_zero_shot_model()
-    
-    # labels = ['retail', 'food', 'facilities']
-    # labels = ['car park', 'food', 'environment', 'retail']
     labels = ['car park', 'food', 'environment','customer services','price','furniture', 'queue','toilet']
 
     start_modelling_time = datetime.now()
     st.write(start_modelling_time)
-
-    @st.cache_data 
-    def predict_category(text):
-        return  text.apply(lambda x: classifier(x, labels)['labels'][0])
     
     with st.spinner('Building topic modelling'):
-        # Apply the predict_categories function to all rows in the dataset
-        # filtered_data['Predicted Category'] = filtered_data['text'].apply(predict_categories)
-    
-        # filtered_data['Predicted Category'] = predict_category(filtered_data['text_short'])
                                                     
         # Display the dataset with the predicted categories
         selected_labels = st.multiselect("Select store:", options=labels, default = labels)
 
         st.write("Predicted Categories for Each Text:")
-        # filtered_data_class = filtered_data[filtered_data['Predicted Category'].isin(selected_labels)]
-        # st.write(filtered_data_class[['text_short', 'Predicted Category', 'sent_res']])
         filtered_data_class = filtered_data[filtered_data['zeroshot_class'].isin(selected_labels)]
         st.write(filtered_data_class[['text_short', 'zeroshot_class', 'sent_res']])
 
         category_counts = filtered_data['zeroshot_class'].value_counts()
         category_counts_sorted = category_counts.sort_values(ascending=False)
-        # st.write(category_counts_sorted.values)
-        # st.write(category_counts_sorted.index)
 
         plot_category = px.bar(x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
         st.plotly_chart(plot_category, use_container_width=True)
@@ -452,41 +433,36 @@ with tab2:
     
     # Find the top category labels if category counts is more than 150 else word cloud won't be able to display
     # top_labels = category_counts.index[:2]
-    top_labels = category_counts[category_counts >= 150].index
+    if (category_counts < 150).all():
+        message = f"The category count is less than 150. Word cloud won't be displayed."
+        st.write(message)  # Replace 'st.write' with the appropriate method to display the message in your Streamlit application
+    else:
+        top_labels = category_counts[category_counts >= 150].index
 
-    # Generate and display word clouds for positive and negative sentiments by looping through the labels and create word clouds
-    for label in top_labels:
-        st.subheader(f'Word Clouds for {label}')
-        
-        # Filter the data for the current label
-        label_data = filtered_data_class[filtered_data_class['zeroshot_class'] == label]
+        # Generate and display word clouds for positive and negative sentiments by looping through the labels and create word clouds
+        for label in top_labels:
+            st.subheader(f'Word Clouds for {label}')
+            
+            # Filter the data for the current label
+            label_data = filtered_data_class[filtered_data_class['zeroshot_class'] == label]
 
-        # Separate positive and negative sentiments
-        positive_text = " ".join(label_data[label_data['sent_res'] == 'positive']['text_short'])
-        negative_text = " ".join(label_data[label_data['sent_res'] == 'negative']['text_short'])
+            # Separate positive and negative sentiments
+            positive_text = " ".join(label_data[label_data['sent_res'] == 'positive']['text'])
+            negative_text = " ".join(label_data[label_data['sent_res'] == 'negative']['text'])
 
-        # Preprocess the text for the word clouds
-        preprocessed_positive_text = preprocess_text(positive_text)
-        preprocessed_negative_text = preprocess_text(negative_text)
+            # Preprocess the text for the word clouds
+            preprocessed_positive_text = preprocess_text(positive_text)
+            preprocessed_negative_text = preprocess_text(negative_text)
 
-        # Generate and display the word clouds for positive and negative sentiments
-        # Create two columns for positive and negative word clouds
-        col1, col2 = st.columns(2)
+            # Generate and display the word clouds for positive and negative sentiments
+            # Create two columns for positive and negative word clouds
+            col1, col2 = st.columns(2)
 
-        with col1:
-            positive_wc_figure = generate_word_cloud(preprocessed_positive_text, f'Positive', font_path=font_path)
-            st.pyplot(positive_wc_figure)
+            with col1:
+                positive_wc_figure = generate_word_cloud(preprocessed_positive_text, f'Positive', font_path=font_path)
+                st.pyplot(positive_wc_figure)
 
-        with col2:
-            negative_wc_figure = generate_word_cloud(preprocessed_negative_text, f'Negative', font_path=font_path)
-            st.pyplot(negative_wc_figure)
+            with col2:
+                negative_wc_figure = generate_word_cloud(preprocessed_negative_text, f'Negative', font_path=font_path)
+                st.pyplot(negative_wc_figure)
 
-    #########################################################
-
-with tab3:
-    st.header("About")
-
-    st.write("This dashboard displays analysis from IKEA Malaysia reviews obtained from Google.")
-    st.write(f"Date range of data ranges from {min_date} to {max_date}.")
-
-    st.write("You may select the filter for analysis to be display. Do click the Submit button for the analysis to run.")
