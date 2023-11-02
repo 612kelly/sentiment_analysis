@@ -139,47 +139,8 @@ with tab2:
     #########################################################
 
     with col1:
-        total_reviews = int(filtered_data["text"].count())
-        st.subheader('Number of Reviews')
-        st.subheader(f"{total_reviews}")
-
-        average_rating = round(filtered_data["stars"].mean(),1)
-        star_rating = ":star:" * int(round(average_rating,0))
-        st.subheader('Average Star Reviews')
-        st.subheader(f"{average_rating} {star_rating}")
-
-        # Star Analysis Chart
-        # Group data by star review and count occurrences
-        stars_counts = filtered_data['stars'].value_counts()
-
-        star_bar = px.bar(filtered_data, x=stars_counts.values, y=stars_counts.index, orientation='h')
-        star_bar.update_layout(width=400, height=350)
-        star_bar.update_xaxes(title='Count')
-        star_bar.update_yaxes(title='Overall Star Rating')
-        st.plotly_chart(star_bar, use_container_width=True)
-
-    with col2:
-            st.subheader('Sentiment Analysis')
-            # Group data by sentiment and count occurrences
-            sentiment_counts = filtered_data['sent_res'].value_counts()
-            # Pie chart for sentiment
-            pie_chart = px.pie(
-                values=sentiment_counts.values,
-                names=sentiment_counts.index,
-                hole=0.3,
-                #title=f'Sentiment Distribution for {language} Reviews',
-                color=sentiment_counts.index,
-                color_discrete_map={"positive": "#7BB662", "negative": "#E03C32", "neutral": "#FFD301"},
-            )
-            pie_chart.update_traces(
-                textposition="inside",
-                texttemplate="%{label}<br>%{value} (%{percent})",
-                hovertemplate="<b>%{label}</b><br>Percentage=%{percent}<br>Count=%{value}",
-            )
-            pie_chart.update_layout(showlegend=False)
-            st.plotly_chart(pie_chart, use_container_width=True)
-
-    with col3:
+        # Group data by sentiment and count occurrences
+        sentiment_counts = filtered_data['sent_res'].value_counts()
         # Assign numerical values to sentiment categories
         sentiment_values = {
             "positive": 5,
@@ -206,8 +167,48 @@ with tab2:
                     {'range': [1.67, 3.33], 'color': "#FFD301"},
                     {'range': [3.33, 5], 'color': "#7BB662"}
                 ]}))
-
+        #gauge_chart.update_layout(width=200, height = 350)
         st.plotly_chart(gauge_chart, use_container_width=True)
+
+    with col2:
+        st.subheader("Comments' Sentiment")
+        
+        # Pie chart for sentiment
+        pie_chart = px.pie(
+            values=sentiment_counts.values,
+            names=sentiment_counts.index,
+            hole=0.3,
+            #title=f'Sentiment Distribution for {language} Reviews',
+            color=sentiment_counts.index,
+            color_discrete_map={"positive": "#7BB662", "negative": "#E03C32", "neutral": "#FFD301"},
+        )
+        pie_chart.update_traces(
+            textposition="inside",
+            texttemplate="%{label}<br>%{value} (%{percent})",
+            hovertemplate="<b>%{label}</b><br>Percentage=%{percent}<br>Count=%{value}",
+        )
+        pie_chart.update_layout(showlegend=False)
+        st.plotly_chart(pie_chart, use_container_width=True)
+
+    with col3:
+        total_reviews = int(filtered_data["text"].count())
+        st.subheader('Number of Reviews')
+        st.subheader(f"{total_reviews}")
+
+        average_rating = round(filtered_data["stars"].mean(),1)
+        star_rating = ":star:" * int(round(average_rating,0))
+        st.subheader('Average Star Reviews')
+        st.subheader(f"{average_rating} {star_rating}")
+
+        # Star Analysis Chart
+        # Group data by star review and count occurrences
+        stars_counts = filtered_data['stars'].value_counts()
+
+        star_bar = px.bar(filtered_data, x=stars_counts.values, y=stars_counts.index, orientation='h')
+        star_bar.update_layout(height=350)
+        star_bar.update_xaxes(title='Count')
+        star_bar.update_yaxes(title='Overall Star Rating')
+        st.plotly_chart(star_bar, use_container_width=True)
 
         
     #########################################################
