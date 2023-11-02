@@ -116,7 +116,7 @@ with st.spinner('Loading data'):
 
     #st.write(filtered_data)
     
-tab1, tab2, tab3 = st.tabs(["Overview", "Topic Modelling", "About"])
+tab1, tab2, tab3 = st.tabs(["About","Overview", "Topic Modelling"])
 
     #########################################################
 
