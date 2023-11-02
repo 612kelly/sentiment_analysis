@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import nltk
@@ -123,17 +124,17 @@ tab1, tab2, tab3 = st.tabs(["About","Overview", "Topic Modelling"])
 with tab1:
     st.header("About")
 
-    st.write("This dashboard displays analysis from IKEA Malaysia reviews obtained from Google.")
+    st.write("This dashboard displays analysis of reviews of all IKEA Malaysia outlets obtained from Google.")
     st.write(f"Date range of data ranges from {min_date} to {max_date}.")
 
-    st.write("You may select the filter for analysis to be display. Do click the Submit button for the analysis to run.")
+    st.write("You may select the filter(s) for analysis to be display on the left panel. Do click the Submit button for the analysis to run.")
 
     #########################################################
         
 with tab2:
     
     # make 3 columns for first row of dashboard
-    col1, col2, col3 = st.columns([45, 10, 45])
+    col1, col2, col3 = st.columns([30, 35, 35])
 
     #########################################################
 
@@ -147,64 +148,72 @@ with tab2:
         st.subheader('Average Star Reviews')
         st.subheader(f"{average_rating} {star_rating}")
 
-    with col3:
         # Star Analysis Chart
-        st.subheader('Star Count')
-
         # Group data by star review and count occurrences
         stars_counts = filtered_data['stars'].value_counts()
 
-        plot5 = px.bar(filtered_data, x=stars_counts.values, y=stars_counts.index, orientation='h')
-        plot5.update_xaxes(title='Count')
-        plot5.update_yaxes(title='Star Rating')
-        st.plotly_chart(plot5, use_container_width=True)
+        star_bar = px.bar(filtered_data, x=stars_counts.values, y=stars_counts.index, orientation='h')
+        star_bar.update_layout(width=400, height=350)
+        star_bar.update_xaxes(title='Count')
+        star_bar.update_yaxes(title='Overall Star Rating')
+        st.plotly_chart(star_bar, use_container_width=True)
 
-    #with col3:
+    with col2:
+            st.subheader('Sentiment Analysis')
+            # Group data by sentiment and count occurrences
+            sentiment_counts = filtered_data['sent_res'].value_counts()
+            # Pie chart for sentiment
+            pie_chart = px.pie(
+                values=sentiment_counts.values,
+                names=sentiment_counts.index,
+                hole=0.3,
+                #title=f'Sentiment Distribution for {language} Reviews',
+                color=sentiment_counts.index,
+                color_discrete_map={"positive": "#7BB662", "negative": "#E03C32", "neutral": "#FFD301"},
+            )
+            pie_chart.update_traces(
+                textposition="inside",
+                texttemplate="%{label}<br>%{value} (%{percent})",
+                hovertemplate="<b>%{label}</b><br>Percentage=%{percent}<br>Count=%{value}",
+            )
+            pie_chart.update_layout(showlegend=False)
+            st.plotly_chart(pie_chart, use_container_width=True)
+
+    with col3:
+        # Assign numerical values to sentiment categories
+        sentiment_values = {
+            "positive": 5,
+            "negative": 1,
+            "neutral": 3
+        }
+
+        # Calculate the overall sentiment score as a weighted average
+        overall_sentiment_score = (filtered_data['sent_res'].map(sentiment_values).mean())
+
+        # Display the overall sentiment score in a chart
+        st.subheader('Overall Sentiment Level')
+        #st.write(f"Overall Sentiment Score: {overall_sentiment_score}")
+
+        # Create a gauge chart
+        gauge_chart = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=overall_sentiment_score,
+            title={'text': "Overall Sentiment Level"},
+            gauge={'axis': {'range': [0, 5]},
+                'bar': {'color': "lightgray"},
+                'steps': [
+                    {'range': [0, 1.67], 'color': "#E03C32"},
+                    {'range': [1.67, 3.33], 'color': "#FFD301"},
+                    {'range': [3.33, 5], 'color': "#7BB662"}
+                ]}))
+
+        st.plotly_chart(gauge_chart, use_container_width=True)
+
         
     #########################################################
 
-    st.subheader('Sentiment Analysis')
+    
     col4, col5, col6 = st.columns([45, 10, 45])
-
-    # with col4:
-    #     # Sentiment Analysis Chart
-    #     # Group data by sentiment and count occurrences
-    #     sentiment_counts = filtered_data['sent_res'].value_counts()
-
-    #     # Bar chart for sentiment
-    #     bar_chart = px.bar(
-    #         sentiment_counts, 
-    #         x=sentiment_counts.index, 
-    #         y=sentiment_counts.values,
-    #         labels={'x': 'sent_res', 'y': 'Count'},
-    #         title=f'Sentiment Distribution for {language} Reviews')
-    #     st.plotly_chart(bar_chart, use_container_width=True)
-
-    #########################################################
-
-    with col4:
-        # Group data by sentiment and count occurrences
-        sentiment_counts = filtered_data['sent_res'].value_counts()
-        # Pie chart for sentiment
-        pie_chart = px.pie(
-            values=sentiment_counts.values,
-            names=sentiment_counts.index,
-            hole=0.3,
-            #title=f'Sentiment Distribution for {language} Reviews',
-            color=sentiment_counts.index,
-            color_discrete_map={"positive": "#7BB662", "negative": "#E03C32", "neutral": "#FFD301"},
-        )
-        pie_chart.update_traces(
-            textposition="inside",
-            texttemplate="%{label}<br>%{value} (%{percent})",
-            hovertemplate="<b>%{label}</b><br>Percentage=%{percent}<br>Count=%{value}",
-        )
-        pie_chart.update_layout(showlegend=False)
-        st.plotly_chart(pie_chart, use_container_width=True)
-
-    #########################################################
-
-    col7, col8, col9 = st.columns([45, 10, 45])
 
     #########################################################
 
@@ -262,7 +271,7 @@ with tab2:
         else:
             font_path = None  # Use the default font for other languages
 
-    with col7:
+    with col4:
         with st.spinner('Plotting Wordcloud'):
             # Postive Word Cloud
             st.subheader(f'Positive Reviews')
@@ -277,7 +286,7 @@ with tab2:
             plt.axis('off')
             st.pyplot(positive_wc)
 
-    with col9:
+    with col6:
         with st.spinner('Plotting Wordcloud'):
             # Negative Word Cloud
             st.subheader(f'Negative Reviews')
@@ -295,7 +304,7 @@ with tab2:
     #########################################################
         
     st.subheader('Polarity and Subjectivity Analysis')
-    col10, col11, col12 = st.columns([45, 10, 45])
+    col7, col8, col9 = st.columns([45, 10, 45])
     #########################################################
 
     sentiments = []
@@ -327,16 +336,18 @@ with tab2:
     labels = list(sentiment_counts.keys())
     values = list(sentiment_counts.values())
 
-    with col10:
+    with col7:
         polarity_analysis = px.bar(x=labels, y=values, title='Sentiment Analysis - Polarity')
         polarity_analysis.update_xaxes(title_text='Sentiment')
         polarity_analysis.update_yaxes(title_text='Count')
+        polarity_analysis.update_layout(width=500)
         st.plotly_chart(polarity_analysis)
 
-    with col12:
+    with col9:
         polarity_dist = px.histogram(sentiments, nbins=5, title='Sentiment Distribution - Polarity')
         polarity_dist.update_xaxes(title_text='Sentiment')
         polarity_dist.update_yaxes(title_text='Count')
+        polarity_dist.update_layout(width=500)
         st.plotly_chart(polarity_dist)
 
     #########################################################
@@ -369,17 +380,19 @@ with tab2:
     labels = list(sentiment_counts.keys())
     values = list(sentiment_counts.values())
 
-    with col10:
+    with col7:
         subjectivity_analysis = px.bar(x=labels, y=values, title='Sentiment Analysis - Subjectivity')
         subjectivity_analysis.update_xaxes(title_text='Sentiment')
         subjectivity_analysis.update_yaxes(title_text='Count')
+        subjectivity_analysis.update_layout(width=500)
         st.plotly_chart(subjectivity_analysis)
 
-    with col12:
-        subjectivity_polarity = px.histogram(sentiments2, nbins=5, title='Sentiment Distribution - Subjectivity')
-        subjectivity_polarity.update_xaxes(title_text='Sentiment')
-        subjectivity_polarity.update_yaxes(title_text='Count')
-        st.plotly_chart(subjectivity_polarity)
+    with col9:
+        subjectivity_dist = px.histogram(sentiments2, nbins=5, title='Sentiment Distribution - Subjectivity')
+        subjectivity_dist.update_xaxes(title_text='Sentiment')
+        subjectivity_dist.update_yaxes(title_text='Count')
+        subjectivity_dist.update_layout(width=500)
+        st.plotly_chart(subjectivity_dist)
 
     #########################################################
 
