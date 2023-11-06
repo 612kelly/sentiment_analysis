@@ -134,7 +134,7 @@ with tab1:
 with tab2:
     
     # make 3 columns for first row of dashboard
-    col1, col2, col3 = st.columns([30, 35, 35])
+    col1, col2, col3 = st.columns([30, 30, 30])
 
     #########################################################
 
@@ -434,6 +434,12 @@ with tab3:
 
     def generate_word_cloud(text, title, font_path=None):
         st.subheader(title)
+
+        # Check if the text contains at least one word
+        if not text or not any(text.split()):
+            st.write("No words to generate a word cloud.")
+            return
+    
         wordcloud = WordCloud(
             background_color='white',
             font_path=font_path,
@@ -452,7 +458,6 @@ with tab3:
         st.write(message)  # Replace 'st.write' with the appropriate method to display the message in your Streamlit application
     else:
         top_labels = category_counts[category_counts >= 150].index
-
         # Generate and display word clouds for positive and negative sentiments by looping through the labels and create word clouds
         for label in top_labels:
             st.subheader(f'Word Clouds for {label}')
@@ -474,9 +479,11 @@ with tab3:
 
             with col1:
                 positive_wc_figure = generate_word_cloud(preprocessed_positive_text, f'Positive', font_path=font_path)
+                st.set_option('deprecation.showPyplotGlobalUse', False)
                 st.pyplot(positive_wc_figure)
 
             with col2:
                 negative_wc_figure = generate_word_cloud(preprocessed_negative_text, f'Negative', font_path=font_path)
+                st.set_option('deprecation.showPyplotGlobalUse', False)
                 st.pyplot(negative_wc_figure)
 
