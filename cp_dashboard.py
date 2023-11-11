@@ -22,7 +22,7 @@ from textblob import TextBlob
 nltk.download("stopwords")
 nltk.download("wordnet")
 nltk.download('punkt')
-
+nltk.download('omw-1.4') 
 #########################################################
 
 st.set_page_config(
@@ -39,31 +39,51 @@ st.markdown(adjust_top_pad, unsafe_allow_html=True)
 st.title('Sentiment Analaysis Dashboard')
 
 #########################################################
-
 DATA_URL = (r"ikea_reviews_sentiment3.parquet")
-data = pd.read_parquet(DATA_URL)
-data['publishedAtDate'] = pd.to_datetime(data['publishedAtDate'])
-data['date'] = data['publishedAtDate'].dt.date
 
-# Function to load data and filter it based on language and date range
-@st.cache_data
-def load_and_filter_data(DATA_URL, language, store, start_date, end_date):
+# @st.cache_data
+def read_and_clean_data(url):
+
+    data = pd.read_parquet(url)
+    data['publishedAtDate'] = pd.to_datetime(data['publishedAtDate'])
     data['date'] = data['publishedAtDate'].dt.date
-    lowercase = lambda x: str(x).lower()
-    data.rename(lowercase, axis='columns', inplace=True)
-    
+
     # Group "Chinese_China," "Chinese_Taiwan," and "Chinese_Hongkong" into "Chinese"
     data['language'] = data['language'].replace(["Chinese_China", "Chinese_Taiwan", "Chinese_Hongkong"], "Chinese")
+    data['language'] = data['language'].replace(["Indonesian"], "Malay")
+    data['language'] = data['language'].fillna("No text")
 
     # Ensure text of sent_res are the same
     data['sent_res'] = data['sent_res'].replace(["POSITIVE"], "positive")
     data['sent_res'] = data['sent_res'].replace(["NEGATIVE"], "negative")
 
+    data['sent_res'] = data['sent_res'].fillna("No text")
+    return data
+
+data = read_and_clean_data(DATA_URL)
+# st.write(data)
+
+
+# Function to load data and filter it based on language and date range
+@st.cache_data
+def load_and_filter_data(language, store, start_date, end_date):
+    data['date'] = data['publishedAtDate'].dt.date
+    lowercase = lambda x: str(x).lower()
+    data.rename(lowercase, axis='columns', inplace=True)
+    
+    # # Group "Chinese_China," "Chinese_Taiwan," and "Chinese_Hongkong" into "Chinese"
+    # data['language'] = data['language'].replace(["Chinese_China", "Chinese_Taiwan", "Chinese_Hongkong"], "Chinese")
+
+    # # Ensure text of sent_res are the same
+    # data['sent_res'] = data['sent_res'].replace(["POSITIVE"], "positive")
+    # data['sent_res'] = data['sent_res'].replace(["NEGATIVE"], "negative")
+
     # Filter data based on language
-    filtered_data = data[data['language'].str.lower().isin([language.lower()])]
+    # filtered_data = data[data['language'].str.lower().isin([language.lower()])  ]
+    filtered_data = data[data['language'].isin(language)  ]
 
     # Filter data by store name
-    filtered_data = filtered_data[filtered_data['title'].isin([store])]
+    filtered_data = filtered_data[filtered_data['title'].isin(store)]
     
     # Filter data by date range
     filtered_data = filtered_data[
@@ -81,15 +101,18 @@ with st.sidebar.form(key ='Form Filter'):
     # include_retweets = st.checkbox('Include retweets in data')
     # num_of_tweets = st.number_input('Maximum number of tweets', 100)
 
-    languages = ["English", "Indonesian", "Chinese"]
+    languages = ["English", "Malay", "Chinese","No text"]
+    # languages = data['language'].unique()
 
     # Filter 1 (select language)
-    language = st.selectbox("Select language:", languages)
+    # language = st.selectbox("Select language:", languages)
+    language = st.multiselect("Select language:", options= languages, default = languages)
 
     # Filter 2 (select stores)
     store_with_most_reviews = data["title"].value_counts().idxmax()
     #store = st.selectbox("Select store:", options=data["title"].unique(), index=data["title"].unique().tolist().index(store_with_most_reviews))
-    store = st.selectbox("Select store:", options=data["title"].unique())
+    # store = st.selectbox("Select store:", options=data["title"].unique())
+    store = st.multiselect("Select store:",options =data["title"].unique(),default=data["title"].unique())
 
     # Filter 3 (date range)
     min_date = min(data['date'])
@@ -113,7 +136,7 @@ with st.sidebar.form(key ='Form Filter'):
 
 # Load and filter data
 with st.spinner('Loading data'):
-    filtered_data = load_and_filter_data(DATA_URL, language, store, start_date, end_date)
+    filtered_data = load_and_filter_data(language, store, start_date, end_date)
 
     #st.write(filtered_data)
     
@@ -123,18 +146,28 @@ tab1, tab2, tab3 = st.tabs(["About","Overview", "Topic Modelling"])
 
 with tab1:
     st.header("About")
+    st.subheader("Introduction")
+
 
     st.write("This dashboard displays analysis of reviews of all IKEA Malaysia outlets obtained from Google.")
     st.write(f"Date range of data ranges from {min_date} to {max_date}.")
 
     st.write("You may select the filter(s) for analysis to be display on the left panel. Do click the Submit button for the analysis to run.")
 
+    # Problem Statement.
+    # Data
+    # st.markdown("")
+    st.subheader("Data")
+    st.write("The google reviews data were scraped using this [website](https://www.youtube.com/)")
+    # Model
+    st.subheader("Sentiment and Classification Model")
+
     #########################################################
         
 with tab2:
     
     # make 3 columns for first row of dashboard
-    col1, col2, col3 = st.columns([30, 30, 30])
+    col1, col2, col3 = st.columns([25, 40, 30])
 
     #########################################################
 
@@ -174,24 +207,32 @@ with tab2:
         st.subheader("Comments' Sentiment")
         
         # Pie chart for sentiment
-        pie_chart = px.pie(
-            values=sentiment_counts.values,
-            names=sentiment_counts.index,
-            hole=0.3,
-            #title=f'Sentiment Distribution for {language} Reviews',
-            color=sentiment_counts.index,
-            color_discrete_map={"positive": "#7BB662", "negative": "#E03C32", "neutral": "#FFD301"},
-        )
-        pie_chart.update_traces(
-            textposition="inside",
-            texttemplate="%{label}<br>%{value} (%{percent})",
-            hovertemplate="<b>%{label}</b><br>Percentage=%{percent}<br>Count=%{value}",
-        )
-        pie_chart.update_layout(showlegend=False)
-        st.plotly_chart(pie_chart, use_container_width=True)
+        # pie_chart = px.pie(
+        #     values=sentiment_counts.values,
+        #     names=sentiment_counts.index,
+        #     hole=0.3,
+        #     #title=f'Sentiment Distribution for {language} Reviews',
+        #     color=sentiment_counts.index,
+        #     color_discrete_map={"positive": "#7BB662", "negative": "#E03C32", "neutral": "#FFD301"},
+        # )
+        # pie_chart.update_traces(
+        #     textposition="inside",
+        #     texttemplate="%{label}<br>%{value} (%{percent})",
+        #     hovertemplate="<b>%{label}</b><br>Percentage=%{percent}<br>Count=%{value}",
+        # )
+        # pie_chart.update_layout(showlegend=False)
+        # st.plotly_chart(pie_chart, use_container_width=True)
+
+
+        #### Use sunburst for multi language/store
+        df_sunburst = filtered_data.groupby(["title","language","sent_res"],dropna=False)[["date"]].count().reset_index()
+        store_sent_sunburst = px.sunburst(df_sunburst, path=['title', 'language', 'sent_res'], values='date', color='sent_res',
+                        color_discrete_map={'(?)':'blue', 'positive':'#7BB662', 'negative':'#E03C32','No text':"#FFD301"})
+        st.plotly_chart(store_sent_sunburst, use_container_width=True)
+
 
     with col3:
-        total_reviews = int(filtered_data["text"].count())
+        total_reviews = int(filtered_data["sent_res"].count())
         st.subheader('Number of Reviews')
         st.subheader(f"{total_reviews}")
 
@@ -252,238 +293,279 @@ with tab2:
     # Combine positive and negative reviews text for this language
     positive_text = " ".join(positive_reviews['text'])
     negative_text = " ".join(negative_reviews['text'])
-    all_text = " ".join(filtered_data['text'])
+    all_text = " ".join(filtered_data['text'].fillna(" "))
 
     with st.spinner('Preprocessing data for wordcloud'):
         # Preprocess the text
-        try:
-            preprocessed_positive_text = preprocess_text(positive_text)
-        except:
-            nltk.download('omw-1.4') 
-            nltk.download('wordnet') 
-            preprocessed_positive_text = preprocess_text(positive_text)
+        # try:
+        preprocessed_positive_text = preprocess_text(positive_text)
+        # except:
+        #     nltk.download('omw-1.4') 
+        #     nltk.download('wordnet') 
+        #     preprocessed_positive_text = preprocess_text(positive_text)
         preprocessed_negative_text = preprocess_text(negative_text)
 
-    # Check if the selected language is Chinese
-        if language.lower() == "chinese":
-            #font_path = (r"simhei\chinese.simhei.ttf")
-            font_path = "chinese.simhei.ttf"
-            # the path to the Chinese font file
-        else:
-            font_path = None  # Use the default font for other languages
+
+        #### Set font path to chinese for all language
+        font_path = "chinese.simhei.ttf"
+
+        # Check if the selected language is Chinese
+        # if language.lower() == "chinese":
+        #     #font_path = (r"simhei\chinese.simhei.ttf")
+        #     font_path = "chinese.simhei.ttf"
+        #     # the path to the Chinese font file
+        # else:
+        #     font_path = None  # Use the default font for other languages
+        #     # font_path = "chinese.simhei.ttf"
 
     with col4:
-        with st.spinner('Plotting Wordcloud'):
-            # Postive Word Cloud
-            st.subheader(f'Positive Reviews')
-            positive_wordcloud = WordCloud(
-                background_color='white',
-                font_path=font_path,  # Set font path based on language
-            ).generate(preprocessed_positive_text)
+        try:
+            with st.spinner('Plotting Wordcloud'):
+                # Postive Word Cloud
+                positive_wordcloud = WordCloud(
+                    background_color='white',
+                    font_path=font_path,  # Set font path based on language
+                ).generate(preprocessed_positive_text)
 
-            # Set the Word Cloud for positive reviews as plot3
-            positive_wc = plt.figure(figsize=(10, 5))
-            plt.imshow(positive_wordcloud, interpolation='bilinear')
-            plt.axis('off')
-            st.pyplot(positive_wc)
+                # Set the Word Cloud for positive reviews as plot3
+                positive_wc = plt.figure(figsize=(10, 5))
+                plt.imshow(positive_wordcloud, interpolation='bilinear')
+                plt.axis('off')
+
+                st.subheader(f'Positive Reviews')
+                st.pyplot(positive_wc)
+        except ValueError:
+            pass
 
     with col6:
-        with st.spinner('Plotting Wordcloud'):
-            # Negative Word Cloud
-            st.subheader(f'Negative Reviews')
-            negative_wordcloud = WordCloud(
-                background_color='white',
-                font_path=font_path,  # Set font path based on language
-            ).generate(preprocessed_negative_text)
+        try:
+            with st.spinner('Plotting Wordcloud'):
+                # Negative Word Cloud
+                negative_wordcloud = WordCloud(
+                    background_color='white',
+                    font_path=font_path,  # Set font path based on language
+                ).generate(preprocessed_negative_text)
 
-            # Set the Word Cloud for negative reviews as plot3
-            negative_wc = plt.figure(figsize=(10, 5))
-            plt.imshow(negative_wordcloud, interpolation='bilinear')
-            plt.axis('off')
-            st.pyplot(negative_wc)
+                # Set the Word Cloud for negative reviews as plot3
+                negative_wc = plt.figure(figsize=(10, 5))
+                plt.imshow(negative_wordcloud, interpolation='bilinear')
+                plt.axis('off')
 
+                st.subheader(f'Negative Reviews')
+                st.pyplot(negative_wc)
+        except ValueError:
+            pass
     #########################################################
         
-    st.subheader('Polarity and Subjectivity Analysis')
-    col7, col8, col9 = st.columns([45, 10, 45])
+
     #########################################################
 
     sentiments = []
-    for reviews in filtered_data['text']:
-        blob = TextBlob(reviews)
-        sentiment_polarity = blob.sentiment.polarity
-        sentiments.append(sentiment_polarity)
-
-    # Adding sentiment to comments by creating a new list of dictionaries with comments and sentiments
     reviews_with_sentiment_polarity = []
-    for i, reviews in enumerate(filtered_data['text']):
-        review_dict = {
-            "reviews": reviews,
-            "sentiment": sentiments[i]
+
+    for reviews in filtered_data['text']:
+        if reviews:
+            blob = TextBlob(reviews)
+            sentiment_polarity = blob.sentiment.polarity
+            sentiments.append(sentiment_polarity)
+
+            review_dict = {
+                "reviews": reviews,
+                "sentiment": sentiment_polarity
+            }
+            reviews_with_sentiment_polarity.append(review_dict)
+
+
+    if sentiments: #### Check if there is no text at all
+
+        st.subheader('Polarity and Subjectivity Analysis')
+        col7, col8, col9 = st.columns([45, 10, 45])
+        # Adding sentiment to comments by creating a new list of dictionaries with comments and sentiments
+        # reviews_with_sentiment_polarity = []
+        # for i, reviews in enumerate(filtered_data['text']):
+        #     review_dict = {
+        #         "reviews": reviews,
+        #         "sentiment": sentiments[i]
+        #     }
+        #     reviews_with_sentiment_polarity.append(review_dict)
+
+        # Bar chart - Sentiment Analysis (Polarity)
+        # Extract sentiment values from reviews_with_sentiment_polarity dictionary
+        sentiments = [entry['sentiment'] for entry in reviews_with_sentiment_polarity]
+
+        # Count the occurrences of different sentiment categories
+        sentiment_counts = {
+            "Positive": len([sentiment for sentiment in sentiments if sentiment > 0]),
+            "Negative": len([sentiment for sentiment in sentiments if sentiment < 0]),
+            "Neutral": len([sentiment for sentiment in sentiments if sentiment == 0])
         }
-        reviews_with_sentiment_polarity.append(review_dict)
 
-    # Bar chart - Sentiment Analysis (Polarity)
-    # Extract sentiment values from reviews_with_sentiment_polarity dictionary
-    sentiments = [entry['sentiment'] for entry in reviews_with_sentiment_polarity]
+        labels = list(sentiment_counts.keys())
+        values = list(sentiment_counts.values())
 
-    # Count the occurrences of different sentiment categories
-    sentiment_counts = {
-        "Positive": len([sentiment for sentiment in sentiments if sentiment > 0]),
-        "Negative": len([sentiment for sentiment in sentiments if sentiment < 0]),
-        "Neutral": len([sentiment for sentiment in sentiments if sentiment == 0])
-    }
+        with col7:
+            polarity_analysis = px.bar(x=labels, y=values, title='Sentiment Analysis - Polarity')
+            polarity_analysis.update_xaxes(title_text='Sentiment')
+            polarity_analysis.update_yaxes(title_text='Count')
+            polarity_analysis.update_layout(width=500)
+            st.plotly_chart(polarity_analysis)
 
-    labels = list(sentiment_counts.keys())
-    values = list(sentiment_counts.values())
+        with col9:
+            polarity_dist = px.histogram(sentiments, nbins=5, title='Sentiment Distribution - Polarity')
+            polarity_dist.update_xaxes(title_text='Sentiment')
+            polarity_dist.update_yaxes(title_text='Count')
+            polarity_dist.update_layout(width=500)
+            st.plotly_chart(polarity_dist)
 
-    with col7:
-        polarity_analysis = px.bar(x=labels, y=values, title='Sentiment Analysis - Polarity')
-        polarity_analysis.update_xaxes(title_text='Sentiment')
-        polarity_analysis.update_yaxes(title_text='Count')
-        polarity_analysis.update_layout(width=500)
-        st.plotly_chart(polarity_analysis)
-
-    with col9:
-        polarity_dist = px.histogram(sentiments, nbins=5, title='Sentiment Distribution - Polarity')
-        polarity_dist.update_xaxes(title_text='Sentiment')
-        polarity_dist.update_yaxes(title_text='Count')
-        polarity_dist.update_layout(width=500)
-        st.plotly_chart(polarity_dist)
-
-    #########################################################
+        #########################################################
 
     sentiments2 = []
-    for reviews in filtered_data['text']:
-        blob = TextBlob(reviews)
-        sentiment_subjectivity = blob.sentiment.subjectivity
-        sentiments2.append(sentiment_subjectivity)
-
-    # Adding sentiment to comments by creating a new list of dictionaries with comments and sentiments
     reviews_with_sentiment_subjectivity = []
-    for i, reviews in enumerate(filtered_data['text']):
-        review_dict = {
-            "reviews": reviews,
-            "sentiment": sentiments2[i]
+
+    for reviews in filtered_data['text']:
+        if reviews:
+            blob = TextBlob(reviews)
+            sentiment_subjectivity = blob.sentiment.subjectivity
+            sentiments2.append(sentiment_subjectivity)
+
+            review_dict = {
+                "reviews": reviews,
+                "sentiment": sentiment_subjectivity
+            }
+            reviews_with_sentiment_subjectivity.append(review_dict)
+
+    # # Adding sentiment to comments by creating a new list of dictionaries with comments and sentiments
+    # reviews_with_sentiment_subjectivity = []
+    # for i, reviews in enumerate(filtered_data['text']):
+    #     review_dict = {
+    #         "reviews": reviews,
+    #         "sentiment": sentiments2[i]
+    #     }
+    #     reviews_with_sentiment_subjectivity.append(review_dict)
+    if sentiments2:
+        # Bar chart - Sentiment Analysis (Polarity)
+        # Extract sentiment values from reviews_with_sentiment_polarity dictionary
+        sentiments2 = [entry['sentiment'] for entry in reviews_with_sentiment_subjectivity]
+
+        # Count the occurrences of different sentiment categories
+        sentiment_counts = {
+            "Subjective": len([sentiment for sentiment in sentiments2 if sentiment >0]),
+            "Objective": len([sentiment for sentiment in sentiments2 if sentiment ==0])
         }
-        reviews_with_sentiment_subjectivity.append(review_dict)
 
-    # Bar chart - Sentiment Analysis (Polarity)
-    # Extract sentiment values from reviews_with_sentiment_polarity dictionary
-    sentiments2 = [entry['sentiment'] for entry in reviews_with_sentiment_subjectivity]
+        labels = list(sentiment_counts.keys())
+        values = list(sentiment_counts.values())
 
-    # Count the occurrences of different sentiment categories
-    sentiment_counts = {
-        "Subjective": len([sentiment for sentiment in sentiments2 if sentiment >0]),
-        "Objective": len([sentiment for sentiment in sentiments2 if sentiment ==0])
-    }
+        with col7:
+            subjectivity_analysis = px.bar(x=labels, y=values, title='Sentiment Analysis - Subjectivity')
+            subjectivity_analysis.update_xaxes(title_text='Sentiment')
+            subjectivity_analysis.update_yaxes(title_text='Count')
+            subjectivity_analysis.update_layout(width=500)
+            st.plotly_chart(subjectivity_analysis)
 
-    labels = list(sentiment_counts.keys())
-    values = list(sentiment_counts.values())
-
-    with col7:
-        subjectivity_analysis = px.bar(x=labels, y=values, title='Sentiment Analysis - Subjectivity')
-        subjectivity_analysis.update_xaxes(title_text='Sentiment')
-        subjectivity_analysis.update_yaxes(title_text='Count')
-        subjectivity_analysis.update_layout(width=500)
-        st.plotly_chart(subjectivity_analysis)
-
-    with col9:
-        subjectivity_dist = px.histogram(sentiments2, nbins=5, title='Sentiment Distribution - Subjectivity')
-        subjectivity_dist.update_xaxes(title_text='Sentiment')
-        subjectivity_dist.update_yaxes(title_text='Count')
-        subjectivity_dist.update_layout(width=500)
-        st.plotly_chart(subjectivity_dist)
+        with col9:
+            subjectivity_dist = px.histogram(sentiments2, nbins=5, title='Sentiment Distribution - Subjectivity')
+            subjectivity_dist.update_xaxes(title_text='Sentiment')
+            subjectivity_dist.update_yaxes(title_text='Count')
+            subjectivity_dist.update_layout(width=500)
+            st.plotly_chart(subjectivity_dist)
 
     #########################################################
 
     st.subheader('Raw data')
-    if language.lower() == "english":
-        st.write(filtered_data[['publishedatdate', 'stars', 'text', 'res_dict', 'sent_res', 'sent_score']])
-    else:
-        st.write(filtered_data[['publishedatdate', 'stars', 'text', 'texttranslated', 'res_dict', 'sent_res', 'sent_score']])
+    # if language.lower() == "english":
+    #     st.write(filtered_data[['publishedatdate', 'stars', 'text', 'res_dict', 'sent_res', 'sent_score']])
+    # else:
+    st.write(filtered_data[['publishedatdate', 'stars', 'text', 'texttranslated', 'res_dict', 'sent_res', 'sent_score']])
 
     #########################################################
 
 with tab3:
+    
     st.subheader('Topic Modelling')
 
-    # Using Zero-shot classification
-    labels = ['car park', 'food', 'environment','customer services','price','furniture', 'queue','toilet']
+    #### Check if there is no text at all
 
-    start_modelling_time = datetime.now()
-    st.write(start_modelling_time)
-    
-    with st.spinner('Building topic modelling'):
-                                                    
-        # Display the dataset with the predicted categories
-        selected_labels = st.multiselect("Select store:", options=labels, default = labels)
+    if sum(pd.notna(filtered_data['zeroshot_class'])) != 0:
 
-        st.write("Predicted Categories for Each Text:")
-        filtered_data_class = filtered_data[filtered_data['zeroshot_class'].isin(selected_labels)]
-        st.write(filtered_data_class[['text_short', 'zeroshot_class', 'sent_res']])
 
-        category_counts = filtered_data['zeroshot_class'].value_counts()
-        category_counts_sorted = category_counts.sort_values(ascending=False)
+        # Using Zero-shot classification
+        # labels = ['car park', 'food', 'environment','customer services','price','furniture', 'queue','toilet']
+        labels = filtered_data['zeroshot_class'].unique()
 
-        plot_category = px.bar(x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
-        st.plotly_chart(plot_category, use_container_width=True)
-    end_modelling_time = datetime.now()
+        # start_modelling_time = datetime.now()
+        # st.write(start_modelling_time)
+        
+        with st.spinner('Building topic modelling'):
+                                                        
+            # Display the dataset with the predicted categories
+            selected_labels = st.multiselect("Select class:", options=labels, default = labels)
 
-    st.write(end_modelling_time - start_modelling_time)
+            st.write("Predicted Categories for Each Text:")
+            filtered_data_class = filtered_data[filtered_data['zeroshot_class'].isin(selected_labels)]
+            st.write(filtered_data_class[['text_short', 'texttranslated', 'zeroshot_class', 'sent_res']])
 
-    def generate_word_cloud(text, title, font_path=None):
-        st.subheader(title)
+            category_counts = filtered_data['zeroshot_class'].value_counts()
+            category_counts_sorted = category_counts.sort_values(ascending=False)
 
-        # Check if the text contains at least one word
-        if not text or not any(text.split()):
-            st.write("No words to generate a word cloud.")
-            return
-    
-        wordcloud = WordCloud(
-            background_color='white',
-            font_path=font_path,
-        ).generate(text)
+            plot_category = px.bar(x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
+            st.plotly_chart(plot_category, use_container_width=True)
+        end_modelling_time = datetime.now()
 
-        # Create a figure for the word cloud and display it
-        wc_figure, ax = plt.subplots(figsize=(10, 5))
-        ax.imshow(wordcloud, interpolation='bilinear')
-        ax.axis('off')
-        return wc_figure
-    
-    # Find the top category labels if category counts is more than 150 else word cloud won't be able to display
-    # top_labels = category_counts.index[:2]
-    if (category_counts < 150).all():
-        message = f"The category count is less than 150. Word cloud won't be displayed."
-        st.write(message)  # Replace 'st.write' with the appropriate method to display the message in your Streamlit application
-    else:
-        top_labels = category_counts[category_counts >= 150].index
-        # Generate and display word clouds for positive and negative sentiments by looping through the labels and create word clouds
-        for label in top_labels:
-            st.subheader(f'Word Clouds for {label}')
-            
-            # Filter the data for the current label
-            label_data = filtered_data_class[filtered_data_class['zeroshot_class'] == label]
+        # st.write(end_modelling_time - start_modelling_time)
 
-            # Separate positive and negative sentiments
-            positive_text = " ".join(label_data[label_data['sent_res'] == 'positive']['text'])
-            negative_text = " ".join(label_data[label_data['sent_res'] == 'negative']['text'])
+        def generate_word_cloud(text, title, font_path=None):
+            st.subheader(title)
 
-            # Preprocess the text for the word clouds
-            preprocessed_positive_text = preprocess_text(positive_text)
-            preprocessed_negative_text = preprocess_text(negative_text)
+            # Check if the text contains at least one word
+            if not text or not any(text.split()):
+                st.write("No words to generate a word cloud.")
+                return
+        
+            wordcloud = WordCloud(
+                background_color='white',
+                font_path=font_path,
+            ).generate(text)
 
-            # Generate and display the word clouds for positive and negative sentiments
-            # Create two columns for positive and negative word clouds
-            col1, col2 = st.columns(2)
+            # Create a figure for the word cloud and display it
+            wc_figure, ax = plt.subplots(figsize=(10, 5))
+            ax.imshow(wordcloud, interpolation='bilinear')
+            ax.axis('off')
+            return wc_figure
+        
+        # Find the top category labels if category counts is more than 150 else word cloud won't be able to display
+        # top_labels = category_counts.index[:2]
+        if (category_counts < 150).all():
+            message = f"The category count is less than 150. Word cloud won't be displayed."
+            st.write(message)  # Replace 'st.write' with the appropriate method to display the message in your Streamlit application
+        else:
+            top_labels = category_counts[category_counts >= 150].index
+            # Generate and display word clouds for positive and negative sentiments by looping through the labels and create word clouds
+            for label in top_labels:
+                st.subheader(f'Word Clouds for {label}')
+                
+                # Filter the data for the current label
+                label_data = filtered_data_class[filtered_data_class['zeroshot_class'] == label]
 
-            with col1:
-                positive_wc_figure = generate_word_cloud(preprocessed_positive_text, f'Positive', font_path=font_path)
-                st.set_option('deprecation.showPyplotGlobalUse', False)
-                st.pyplot(positive_wc_figure)
+                # Separate positive and negative sentiments
+                positive_text = " ".join(label_data[label_data['sent_res'] == 'positive']['text'])
+                negative_text = " ".join(label_data[label_data['sent_res'] == 'negative']['text'])
 
-            with col2:
-                negative_wc_figure = generate_word_cloud(preprocessed_negative_text, f'Negative', font_path=font_path)
-                st.set_option('deprecation.showPyplotGlobalUse', False)
-                st.pyplot(negative_wc_figure)
+                # Preprocess the text for the word clouds
+                preprocessed_positive_text = preprocess_text(positive_text)
+                preprocessed_negative_text = preprocess_text(negative_text)
+
+                # Generate and display the word clouds for positive and negative sentiments
+                # Create two columns for positive and negative word clouds
+                col1, col2 = st.columns(2)
+
+                with col1:
+                    positive_wc_figure = generate_word_cloud(preprocessed_positive_text, f'Positive', font_path=font_path)
+                    st.set_option('deprecation.showPyplotGlobalUse', False)
+                    st.pyplot(positive_wc_figure)
+
+                with col2:
+                    negative_wc_figure = generate_word_cloud(preprocessed_negative_text, f'Negative', font_path=font_path)
+                    st.set_option('deprecation.showPyplotGlobalUse', False)
+                    st.pyplot(negative_wc_figure)
 
