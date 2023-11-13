@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
+# import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 from wordcloud import WordCloud
@@ -11,7 +11,7 @@ from nltk.stem import WordNetLemmatizer
 # from nltk.tokenize import word_tokenize
 import re
 # from matplotlib.font_manager import FontProperties
-from sklearn.feature_extraction.text import CountVectorizer
+# from sklearn.feature_extraction.text import CountVectorizer
 # from sklearn.decomposition import LatentDirichletAllocation
 from transformers import pipeline
 from dateutil.relativedelta import relativedelta
@@ -106,7 +106,7 @@ with st.sidebar.form(key ='Form Filter'):
 
     # Filter 1 (select language)
     # language = st.selectbox("Select language:", languages)
-    language = st.multiselect("Select language:", options= languages, default = languages)
+    language = st.multiselect("Select language:", options= languages, default = ["English","No text"])
 
     # Filter 2 (select stores)
     store_with_most_reviews = data["title"].value_counts().idxmax()
@@ -122,8 +122,8 @@ with st.sidebar.form(key ='Form Filter'):
     default_start_date = max_date - relativedelta(years=2) # min_date  # Set the default to the minimum date
     default_end_date = max_date  # Set the default to the maximum date
 
-    start_date = st.date_input("Start Date", min_value = min_date, max_value = max_date, value=default_start_date)
-    end_date = st.date_input("End Date", min_value = min_date, max_value = max_date, value=default_end_date)
+    start_date = st.date_input("Start Date", min_value = min_date, max_value = max_date, value=default_start_date, help="Earliest date is "+str(min_date))
+    end_date = st.date_input("End Date", min_value = min_date, max_value = max_date, value=default_end_date, help="Latest date is "+str(max_date))
 
     if start_date > end_date:
         st.warning("Start Date cannot be after End Date. Please select a valid date range.")
@@ -140,27 +140,36 @@ with st.spinner('Loading data'):
 
     #st.write(filtered_data)
     
-tab1, tab2, tab3 = st.tabs(["About","Overview", "Topic Modelling"])
+tab1, tab2, tab3 = st.tabs(["About","Overview", "Topic Classification"])
 
     #########################################################
 
 with tab1:
     st.header("About")
-    st.subheader("Introduction")
-
-
-    st.write("This dashboard displays analysis of reviews of all IKEA Malaysia outlets obtained from Google.")
-    st.write(f"Date range of data ranges from {min_date} to {max_date}.")
-
-    st.write("You may select the filter(s) for analysis to be display on the left panel. Do click the Submit button for the analysis to run.")
 
     # Problem Statement.
+    st.subheader("Introduction")
+
+    st.write("The problem addressed in this research project is the need to analyze customer reviews of IKEA Malaysia effectively using Natural Language Processing (NLP) techniques in order to identify the patterns of feedback. The challenge lies in extracting relevant and meaningful insights from a vast volume of customer feedback gathered from internal sources and scraped from online platforms like Google as it has up to tens of thousands review available. By understanding the sentiments, common themes and issues encountered by customers, businesses can obtain valuable insights on improving their products, services, and overall customer satisfaction.")
+    st.write("This dashboard displays analysis of Google reviews of all IKEA Malaysia outlets obtained from Google.")
+    st.write("You may select the filter(s) for analysis to be display on the left panel. Do click the Submit button for the analysis to run.")
+
     # Data
-    # st.markdown("")
+    
     st.subheader("Data")
-    st.write("The google reviews data were scraped using this [website](https://www.youtube.com/)")
+    st.write("The Google reviews data were scraped using this [website](https://www.xxx.com/).")
+    st.write(f"Scraped of data ranges from {min_date} to {max_date}.")
+
     # Model
-    st.subheader("Sentiment and Classification Model")
+    st.subheader("Sentiment and Topic Classification Model")
+    st.write("You can see the reviews count, statistics and sentiment analsysis under the 'Overview' tab and classification for each review under the 'Topic Classification' tab.")
+    st.write("The sentiment analysis model attempts to classify each review into positive or negative. This aim to understand how visitors are talking IKEA.")
+    st.write("The sentiment model used is [distilbert-base-uncased-finetuned-sst-2-english](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english).")
+
+    st.write("\n")
+
+    st.write("The topic classification attempts to classify each review into specific classes such as price, food, car park etc. This aim to understand what topics are mainly mentioned by visitors in IKEA.")
+    st.write("The topic classification model used is [facebook/bart-large-mnli](https://huggingface.co/facebook/bart-large-mnli).")
 
     #########################################################
         
