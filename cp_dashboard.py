@@ -517,8 +517,8 @@ with tab3:
             category_counts_sorted = category_counts.sort_values(ascending=False)
 
             plot_category = px.bar(x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
-            st.update_xaxes(title='Count')
-            st.update_yaxes(title='Category')
+            plot_category.update_xaxes(title='Count')
+            plot_category.update_yaxes(title='Category')
             st.plotly_chart(plot_category, use_container_width=True)
 
         end_modelling_time = datetime.now()
