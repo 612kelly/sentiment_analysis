@@ -106,7 +106,7 @@ with st.sidebar.form(key ='Form Filter'):
 
     # Filter 1 (select language)
     # language = st.selectbox("Select language:", languages)
-    language = st.multiselect("Select language:", options= languages, default = ["English","No text"])
+    language = st.multiselect("Select language:", options= languages, default = ["English","Malay", "Chinese"])
 
     # Filter 2 (select stores)
     store_with_most_reviews = data["title"].value_counts().idxmax()
@@ -157,7 +157,7 @@ with tab1:
     # Data
     
     st.subheader("Data")
-    st.write("The Google reviews data were scraped using this [website](https://www.xxx.com/).")
+    st.write("The Google reviews data were scraped using this [website](https://apify.com/compass/google-maps-reviews-scraper).")
     st.write(f"Scraped of data ranges from {min_date} to {max_date}.")
 
     # Model
@@ -497,7 +497,6 @@ with tab3:
 
     if sum(pd.notna(filtered_data['zeroshot_class'])) != 0:
 
-
         # Using Zero-shot classification
         # labels = ['car park', 'food', 'environment','customer services','price','furniture', 'queue','toilet']
         labels = filtered_data['zeroshot_class'].unique()
@@ -518,7 +517,10 @@ with tab3:
             category_counts_sorted = category_counts.sort_values(ascending=False)
 
             plot_category = px.bar(x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
+            st.update_xaxes(title='Count')
+            st.update_yaxes(title='Category')
             st.plotly_chart(plot_category, use_container_width=True)
+
         end_modelling_time = datetime.now()
 
         # st.write(end_modelling_time - start_modelling_time)
