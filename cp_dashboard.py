@@ -271,6 +271,9 @@ with tab2:
     # Word Cloud
     # Function to preprocess text
     def preprocess_text(text):
+        # Remove text containing numbers
+        text = re.sub(r'\b\d+\b', '', text)
+
         # Tokenize the text
         words = nltk.word_tokenize(text)
         
@@ -281,9 +284,12 @@ with tab2:
             nltk.download('stopwords')
             words = [word for word in words if word.lower() not in stopwords.words("english")]
         
-        # Remove the word "ikea", "the", "ok", "la"
+        # Removal of words
         # words = [word for word in words if word.lower() != "ikea"]
         words = [word for word in words if word.lower() not in ["ikea", "the", "ok", "la", "good", "bad"]]
+
+        # Remove words containing "rm" and :pm"
+        words = [word for word in words if "rm" not in word.lower() and "pm" not in word.lower()]
 
         # Lemmatize words
         lemmatizer = WordNetLemmatizer()
@@ -303,6 +309,8 @@ with tab2:
     positive_text = " ".join(positive_reviews['text'])
     negative_text = " ".join(negative_reviews['text'])
     all_text = " ".join(filtered_data['text'].fillna(" "))
+
+    # st.write(positive_text)
 
     with st.spinner('Preprocessing data for wordcloud'):
         # Preprocess the text
@@ -500,6 +508,7 @@ with tab3:
         # Using Zero-shot classification
         # labels = ['car park', 'food', 'environment','customer services','price','furniture', 'queue','toilet']
         labels = filtered_data['zeroshot_class'].unique()
+        # labels = ['food', 'queue']
 
         # start_modelling_time = datetime.now()
         # st.write(start_modelling_time)
@@ -513,10 +522,27 @@ with tab3:
             filtered_data_class = filtered_data[filtered_data['zeroshot_class'].isin(selected_labels)]
             st.write(filtered_data_class[['text_short', 'texttranslated', 'zeroshot_class', 'sent_res']])
 
-            category_counts = filtered_data['zeroshot_class'].value_counts()
+            category_counts = filtered_data_class['zeroshot_class'].value_counts()
             category_counts_sorted = category_counts.sort_values(ascending=False)
 
             plot_category = px.bar(x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
+
+            # bar_chart_data = pd.DataFrame({
+            #     'Category': category_counts_sorted.index,
+            #     'Count': category_counts_sorted.values,
+            #     'Sentiment': [filtered_data_class[filtered_data_class['zeroshot_class'] == label]['sent_res'].iloc[0] for label in category_counts_sorted.index]
+            # })
+
+            # plot_category = px.bar(
+            #     bar_chart_data,
+            #     x='Count',
+            #     y='Category',
+            #     orientation='h',
+            #     color='Sentiment',
+            #     labels={'Sentiment': 'Sentiment'},
+            #     color_discrete_sequence=['green', 'red'],  # Adjust colors as needed
+            # )
+            
             plot_category.update_xaxes(title='Count')
             plot_category.update_yaxes(title='Category')
             st.plotly_chart(plot_category, use_container_width=True)
