@@ -96,16 +96,11 @@ def load_and_filter_data(language, store, start_date, end_date):
 # Slidebar filter
 st.sidebar.header("Choose your filter")
 with st.sidebar.form(key ='Form Filter'):
-    # user_word = st.text_input("Enter a keyword", "habs")    
-    # select_language = st.radio('Tweet language', ('All', 'English', 'French'))
-    # include_retweets = st.checkbox('Include retweets in data')
-    # num_of_tweets = st.number_input('Maximum number of tweets', 100)
 
     languages = ["English", "Malay", "Chinese","No text"]
     # languages = data['language'].unique()
 
     # Filter 1 (select language)
-    # language = st.selectbox("Select language:", languages)
     language = st.multiselect("Select language:", options= languages, default = ["English","Malay", "Chinese"])
 
     # Filter 2 (select stores)
@@ -273,6 +268,10 @@ with tab2:
     def preprocess_text(text):
         # Remove text containing numbers
         text = re.sub(r'\b\d+\b', '', text)
+
+        # Replace symbols and stop words with spaces
+        # text = re.sub(r'[.,\/\-\(\)]', ' ', text)
+        text = re.sub(r'\b(?:ikea|the|ok|la|good|bad|etc|covid)\b', '', text, flags=re.IGNORECASE)
 
         # Tokenize the text
         words = nltk.word_tokenize(text)
@@ -557,7 +556,7 @@ with tab3:
             # Check if the text contains at least one word
             if not text or not any(text.split()):
                 st.write("No words to generate a word cloud.")
-                return
+                return None
         
             wordcloud = WordCloud(
                 background_color='white',
