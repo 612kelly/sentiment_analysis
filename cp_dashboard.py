@@ -271,11 +271,11 @@ with tab2:
 
         # Replace symbols and stop words with spaces
         # text = re.sub(r'[.,\/\-\(\)]', ' ', text)
-        text = re.sub(r'\b(?:ikea|the|ok|la|good|bad|etc|covid)\b', '', text, flags=re.IGNORECASE)
-
+        text = re.sub(r'\b(?:ikea|the|ok|la|good|bad|etc|covid|RM|am|pm|re|30am|50am|p|e|je|kan)\b', '', text, flags=re.IGNORECASE)
+        
         # Tokenize the text
         words = nltk.word_tokenize(text)
-        
+
         # Remove stopwords
         try:
             words = [word for word in words if word.lower() not in stopwords.words("english")]
@@ -309,16 +309,9 @@ with tab2:
     negative_text = " ".join(negative_reviews['text'])
     all_text = " ".join(filtered_data['text'].fillna(" "))
 
-    # st.write(positive_text)
-
     with st.spinner('Preprocessing data for wordcloud'):
         # Preprocess the text
-        # try:
         preprocessed_positive_text = preprocess_text(positive_text)
-        # except:
-        #     nltk.download('omw-1.4') 
-        #     nltk.download('wordnet') 
-        #     preprocessed_positive_text = preprocess_text(positive_text)
         preprocessed_negative_text = preprocess_text(negative_text)
 
 
