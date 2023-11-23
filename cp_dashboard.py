@@ -271,7 +271,7 @@ with tab2:
 
         # Replace symbols and stop words with spaces
         # text = re.sub(r'[.,\/\-\(\)]', ' ', text)
-        text = re.sub(r'\b(?:ikea|the|ok|la|good|bad|etc|covid|RM|am|pm|re|30am|50am|p|e|je|kan|s|0|u|sia|Mr|Q|well|h|O|furniture|food|price)\b', '', text, flags=re.IGNORECASE)
+        text = re.sub(r'\b(?:ikea|the|ok|la|good|bad|etc|covid|RM|am|pm|re|30am|50am|p|e|je|kan|s|0|u|sia|Mr|Q|well|h|O|furniture|food|price|nice|tu|m|C)\b', '', text, flags=re.IGNORECASE)
         
         # Tokenize the text
         words = nltk.word_tokenize(text)
