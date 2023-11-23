@@ -498,9 +498,8 @@ with tab3:
     if sum(pd.notna(filtered_data['zeroshot_class'])) != 0:
 
         # Using Zero-shot classification
-        # labels = ['car park', 'food', 'environment','customer services','price','furniture', 'queue','toilet']
+        # labels = ['car park', 'food', 'environment','customer service','price','furniture', 'queue','toilet']
         labels = filtered_data['zeroshot_class'].unique()
-        # labels = ['food', 'queue']
 
         # start_modelling_time = datetime.now()
         # st.write(start_modelling_time)
