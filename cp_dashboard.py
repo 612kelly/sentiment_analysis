@@ -159,7 +159,9 @@ with tab1:
     st.subheader("Sentiment and Topic Classification Model")
     st.write("You can see the reviews count, statistics and sentiment analsysis under the 'Overview' tab and classification for each review under the 'Topic Classification' tab.")
     st.write("The sentiment analysis model attempts to classify each review into positive or negative. This aim to understand how visitors are talking IKEA.")
-    st.write("The sentiment model used is [distilbert-base-uncased-finetuned-sst-2-english](https://huggingface.co/distilbert-base-uncased-finetuned-sst-2-english).")
+    st.write("The sentiment model used English reviews is [siebert/sentiment-roberta-large-english](https://huggingface.co/siebert/sentiment-roberta-large-english).")
+    st.write("The sentiment model used Malay/Indonesian reviews is [w11wo/indonesian-roberta-base-sentiment-classifier](https://huggingface.co/w11wo/indonesian-roberta-base-sentiment-classifier).")
+    st.write("The sentiment model used Chinese reviews is [liam168/c2-roberta-base-finetuned-dianping-chinese](https://huggingface.co/liam168/c2-roberta-base-finetuned-dianping-chinese).")
 
     st.write("\n")
 
@@ -565,7 +567,7 @@ with tab3:
         # top_labels = category_counts.index[:2]
         if (category_counts < 150).all():
             message = f"The category count is less than 150. Word cloud won't be displayed."
-            st.write(message)  # Replace 'st.write' with the appropriate method to display the message in your Streamlit application
+            st.write(message)
         else:
             top_labels = category_counts[category_counts >= 150].index
             # Generate and display word clouds for positive and negative sentiments by looping through the labels and create word clouds
