@@ -516,7 +516,7 @@ with tab3:
             st.write(filtered_data_class[['text_short', 'texttranslated', 'zeroshot_class', 'sent_res']])
 
             category_counts = filtered_data_class['zeroshot_class'].value_counts()
-            category_counts_sorted = category_counts.sort_values(ascending=False)
+            category_counts_sorted = category_counts.sort_values(ascending=True)
 
             plot_category = px.bar(x=category_counts_sorted.values, y=category_counts_sorted.index, orientation='h')
 
